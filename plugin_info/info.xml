@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<info>
+    <id>plugwise</id>
+    <name>Plugwise</name>
+    <description>Protocole plugwise</description>
+    <licence>AGPL</licence>
+    <author>DavZero</author>
+    <require>2.1</require>
+    <category>automation protocol</category>
+    <allowRemote>0</allowRemote>
+    <hasDependency>1</hasDependency>
+    <hasOwnDeamon>1</hasOwnDeamon>
+</info>
