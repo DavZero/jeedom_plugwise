@@ -65,22 +65,10 @@ class plugwise extends eqLogic {
         $eqp->setConfiguration('toRemove',0);
         if (init('frequency')) $eqp->setConfiguration('frequency', init('frequency'));
         if (init('state') == 'On'){
-          $cmd = $eqp->getCmd('info', 'state');
-          if ($cmd->execCmd() != 1)
-          {
-            $cmd->setConfiguration('value',1);
-            $cmd->save();
-            $cmd->event(1);
-          }
+          $eqp->getCmd('info', 'state')->event(1);
         }
         else if (init('state') == 'Off'){
-          $cmd = $eqp->getCmd('info', 'state');
-          if ($cmd->execCmd() != 0)
-          {
-            $cmd->setConfiguration('value',0);
-            $cmd->save();
-            $cmd->event(0);
-          }
+          $eqp->getCmd('info', 'state')->event(0);
         }
         $eqp->save();
         break;
@@ -90,8 +78,6 @@ class plugwise extends eqLogic {
         $puissance = init('power');
         if (is_object($cmd))
         {
-          $cmd->setConfiguration('value',$puissance);
-          $cmd->save();
           $cmd->event($puissance); // Pas sur qu'il faille le faire même si la valeur ne change pas?
         }
         else
@@ -104,8 +90,6 @@ class plugwise extends eqLogic {
         $puissance8s = init('power8s');
         if (is_object($cmd))
         {
-          $cmd->setConfiguration('value',$puissance8s);
-          $cmd->save();
           $cmd->event($puissance8s); // Pas sur qu'il faille le faire même si la valeur ne change pas?
         }
         else
@@ -115,16 +99,9 @@ class plugwise extends eqLogic {
         }
 
         $cmd = $eqp->getCmd('info', 'consumptionThisHour');
-        $cmdTotal = $eqp->getCmd('info', 'consumptionTotal');
         $consumptionThisHour = init('consumptionThisHour');
-        $deltaConsumption = $consumptionThisHour-$cmd->getConfiguration('value');
-        $totalConsumption = $cmdTotal->getConfiguration('value');
-        if ($deltaConsumption > 0) $totalConsumption += $deltaConsumption;
-        else $totalConsumption += $consumptionThisHour;
         if (is_object($cmd))
         {
-          $cmd->setConfiguration('value',$consumptionThisHour);
-          $cmd->save();
           $cmd->event($consumptionThisHour); // Pas sur qu'il faille le faire même si la valeur ne change pas?
         }
         else
@@ -132,10 +109,15 @@ class plugwise extends eqLogic {
           log::add('plugwise', 'error', 'Impossible de trouver la commande de consommation de l\'heure en cours de l\'equipement ' . $macAddress);
           //throw new Exception('Impossible de trouver la commande de statut de l\'equipement ' + $macAddress);
         }
-        if (is_object($cmdTotal))
+        $cmdTotal = $eqp->getCmd('info', 'consumptionTotal');
+        if (is_object($cmdTotal) && is_object($cmd))
         {
-          $cmdTotal->setConfiguration('value',$totalConsumption);
-          $cmdTotal->save();
+          $deltaConsumption = $consumptionThisHour-$cmd->execCmd();
+          $cmd->setCollectDate('');
+          $totalConsumption = $cmdTotal->execCmd();
+          $cmdTotal->setCollectDate('');
+          if ($deltaConsumption > 0) $totalConsumption += $deltaConsumption;
+          else $totalConsumption += $consumptionThisHour;
           $cmdTotal->event($totalConsumption); // Pas sur qu'il faille le faire même si la valeur ne change pas?
         }
         else
@@ -153,14 +135,6 @@ class plugwise extends eqLogic {
 
         if (is_object($cmd))
         {
-          $oldVal = $cmd->getConfiguration('value');
-          log::add('plugwise', 'debug', 'demande d\'etat : ' . init('state') .', ancien etat : ' . $oldVal . ', nouvelle etat : ' . $newVal);
-          if ($oldVal != $newVal)
-          {
-            $cmd->setConfiguration('value',$newVal);
-            $cmd->save();
-            log::add('plugwise', 'info', 'Passage en ' . init('state') .' de la prise ' . $macAddress);
-          }
           $cmd->event($newVal); // Pas sur qu'il faille le faire même si la valeur ne change pas?
         }
         else
@@ -310,7 +284,7 @@ class plugwise extends eqLogic {
       $i++;
     }
     if ($i >= 30) {
-      log::add('pluwise', 'error', 'Impossible de lancer le démon plugwise, vérifiez le port', 'unableStartDeamon');
+      log::add('plugwisewise', 'error', 'Impossible de lancer le démon plugwise, vérifiez le port', 'unableStartDeamon');
       return false;
     }
     message::removeAll('plugwise', 'unableStartDeamon');
@@ -619,9 +593,9 @@ class plugwiseCmd extends cmd {
 	public function execute($_options = array()) {
 		//log::add('plugwise', 'info', 'execute '.$this->getLogicalId());
 		switch ($this->getType()) {
-			case 'info':
+			/*case 'info':
 				return $this->getConfiguration('value');
-				break;
+				break;*/
 			case 'action':
         if ($this->getConfiguration('request') == 'RAZCONSUMPTION'){
           $cmdTotal = $this->getEqLogic()->getCmd('info', 'consumptionTotal');
