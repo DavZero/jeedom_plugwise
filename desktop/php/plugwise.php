@@ -106,14 +106,14 @@ $eqLogics = eqLogic::byType('plugwise');
               <br/>
               <div class="form-group">
                 <label class="col-sm-3 control-label">{{Nom de l'équipement}}</label>
-                <div class="col-sm-3">
+                <div class="col-sm-8">
                   <input type="text" class="eqLogicAttr form-control" data-l1key="id" style="display : none;" />
                   <input type="text" class="eqLogicAttr form-control" data-l1key="name" placeholder="{{Nom de l'équipement}}"/>
                 </div>
               </div>
               <div class="form-group">
                 <label class="col-sm-3 control-label" >{{Objet parent}}</label>
-                <div class="col-sm-3">
+                <div class="col-sm-8">
                   <select id="sel_object" class="eqLogicAttr form-control" data-l1key="object_id">
                     <option value="">{{Aucun}}</option>
                     <?php
@@ -125,7 +125,7 @@ $eqLogics = eqLogic::byType('plugwise');
                 </div>
               </div>
               <div class="form-group">
-                <label class="col-sm-2 control-label">{{Catégorie}}</label>
+                <label class="col-sm-3 control-label">{{Catégorie}}</label>
                 <div class="col-sm-8">
                   <?php
                   foreach (jeedom::getConfiguration('eqLogic:category') as $key => $value) {
@@ -139,13 +139,9 @@ $eqLogics = eqLogic::byType('plugwise');
               <div class="form-group">
                 <label class="col-sm-3 control-label" >{{Activer}}</label>
                 <div class="col-sm-8">
-                <label class="checkbox-inline"><input type="checkbox" class="eqLogicAttr" data-l1key="isEnable" checked/>{{Activer}}</label>
-                <label class="checkbox-inline"><input type="checkbox" class="eqLogicAttr" data-l1key="isVisible" checked/>{{Visible}}</label>
-              </div>
-              <!--<div class="col-sm-9">
-                <input type="checkbox" class="eqLogicAttr bootstrapSwitch" data-label-text="{{Activer}}" data-l1key="isEnable" checked/>
-                <input type="checkbox" class="eqLogicAttr bootstrapSwitch" data-label-text="{{Visible}}" data-l1key="isVisible" checked/>
-              </div>-->
+                  <label class="checkbox-inline"><input type="checkbox" class="eqLogicAttr" data-l1key="isEnable" checked/>{{Activer}}</label>
+                  <label class="checkbox-inline"><input type="checkbox" class="eqLogicAttr" data-l1key="isVisible" checked/>{{Visible}}</label>
+                </div>
               </div>
             </fieldset>
           </form>
@@ -153,23 +149,23 @@ $eqLogics = eqLogic::byType('plugwise');
         <div class="col-sm-6">
           <form class="form-horizontal">
             <fieldset>
-              <legend><i class="fa fa-info-circle"></i>  {{Informations}} </legend>
+              <br/>
               <div class="form-group">
                 <div class="form-group">
                   <label class="col-sm-2 control-label">{{Type}}</label>
-                  <span class="col-sm-2 control-label eqLogicAttr" data-l1key="configuration" data-l2key="type"></span>
+                  <span class="col-sm-8 control-label eqLogicAttr" data-l1key="configuration" data-l2key="type"></span>
                 </div>
                 <div class="form-group">
                   <label class="col-sm-2 control-label">{{Adresse mac}}</label>
-                  <span class="col-sm-2 control-label eqLogicAttr" data-l1key="configuration" data-l2key="macAddress"></span>
+                  <span class="col-sm-8 control-label eqLogicAttr" data-l1key="configuration" data-l2key="macAddress"></span>
                 </div>
                 <div class="form-group">
                   <label class="col-sm-2 control-label">{{Version firmware}}</label>
-                  <span class="col-sm-2 control-label eqLogicAttr" data-l1key="configuration" data-l2key="firmwareVersion"></span>
+                  <span class="col-sm-8 control-label eqLogicAttr" data-l1key="configuration" data-l2key="firmwareVersion"></span>
                 </div>
                 <div class="form-group">
                   <label class="col-sm-2 control-label">{{Version hardware}}</label>
-                  <span class="col-sm-2 control-label eqLogicAttr" data-l1key="configuration" data-l2key="hardwareVersion"></span>
+                  <span class="col-sm-8 control-label eqLogicAttr" data-l1key="configuration" data-l2key="hardwareVersion"></span>
                 </div>
               </div>
             </fieldset>
@@ -178,6 +174,7 @@ $eqLogics = eqLogic::byType('plugwise');
       </div>
     </div>
     <div role="tabpanel" class="tab-pane" id="commandtab">
+      <br/>
       <table id="table_cmd" class="table table-bordered table-condensed">
         <thead>
           <tr>
