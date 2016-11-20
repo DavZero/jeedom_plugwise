@@ -3,31 +3,36 @@ var LogType = require('./logger/logger.js').logType;
 var Logger = require('./logger/logger.js').getInstance();
 var plugwiseAPI = require ('./plugwisejs/plugwiseDevice.js');
 var request = require('request');
+
 Logger.setLogLevel(LogType.DEBUG);
 
+/******* Utility *****************/
 var urlJeedom = '';
 var gwAddress = '';
-var logLevel = 0;
+var logLevel = 'error';
 var serverPort=5001;
 
 // print process.argv
 process.argv.forEach(function(val, index, array) {
-	switch ( index ) {
-		case 2 : urlJeedom = val; break;
+  switch ( index ) {
+    case 2 : urlJeedom = val; break;
 		case 3 : gwAddress = val; break;
     case 4 : serverPort = val; break;
-		case 5 :
+    case 5 :
       logLevel = val;
-      if (logLevel >= 3) Logger.setLogLevel(LogType.DEBUG);
-      else if (logLevel == 2) Logger.setLogLevel(LogType.INFO);
-      //else if (logLevel == 1) Logger.setLogLevel(LogType.WARNING);
-      else Logger.setLogLevel(LogType.WARNING);
+      if (logLevel == 'debug') Logger.setLogLevel(LogType.DEBUG);
+      else if (logLevel == 'info') Logger.setLogLevel(LogType.INFO);
+      else if (logLevel == 'warning') Logger.setLogLevel(LogType.WARNING);
+      else Logger.setLogLevel(LogType.ERROR);
       break;
-	}
+  }
 });
 
-Logger.log("Démon version 1.1.24", LogType.DEBUG);
-Logger.log("Argument ==> urlJeedom : " + urlJeedom + ", serialPort : " + gwAddress, LogType.DEBUG);
+Logger.log("Démon version 1.1.24", LogType.INFO);
+Logger.log("urlJeedom = "+urlJeedom, LogType.DEBUG) ;
+Logger.log("gateway = "+gwAddress, LogType.DEBUG) ;
+Logger.log("serverPort = "+serverPort, LogType.DEBUG) ;
+Logger.log("logLevel = "+logLevel, LogType.INFO) ;
 
 var busy = false;
 var jeedomSendQueue = [];

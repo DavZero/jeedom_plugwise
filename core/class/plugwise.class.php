@@ -240,31 +240,29 @@ class plugwise extends eqLogic {
     passthru('/bin/bash ' . $resource_path . '/nodejs.sh ' . $resource_path . ' > ' . log::getPathToLog('plugwise_dep') . ' 2>&1 &');
   }
 
-  public static function deamon_start($_debug = false) {
+  public static function deamon_start() {
     self::deamon_stop();
+
     $deamon_info = self::deamon_info();
     if ($deamon_info['launchable'] != 'ok') {
       throw new Exception(__('Veuillez vérifier la configuration', __FILE__));
     }
-    log::add('plugwise', 'info', 'Lancement du démon plugwise');
+    log::add('upnp', 'info', 'Lancement du démon plugwise');
     $serialPort = jeedom::getUsbMapping(config::byKey('serialPort', 'plugwise'));
-
     if ($serialPort == '' ) {
       throw new Exception(__('Le port : ', __FILE__) . $port . __(' n\'existe pas', __FILE__));
     }
-
     $servicePort = config::byKey('servicePort', 'plugwise');
     if ($servicePort == '') $servicePort = 5001;
-
     $url  = network::getNetworkAccess().'/core/api/jeeApi.php?api='.config::byKey('api');
+    plugwise::launch_svc($url, $serialPort, $servicePort);
+  }
 
-    if ($_debug = true) {
-      $logLevel = "4";
-    } else {
-      $logLevel = "0";
-    }
-    $plugwise_path = realpath(dirname(__FILE__) . '/../../node');
-    $cmd = 'nice -n 19 nodejs ' . $plugwise_path . '/plugwiseDeamon.js ' . $url . ' ' . $serialPort . ' ' . $servicePort . ' ' . $logLevel;
+  public static function launch_svc($url, $serialPort, $servicePort)
+  {
+    $logLevel = log::convertLogLevel(log::getLogLevel('plugwise'));
+    $deamonPath = realpath(dirname(__FILE__) . '/../../node');
+    $cmd = 'nice -n 19 nodejs ' . $deamonPath . '/plugwiseDeamon.js ' . $url . ' ' . $serialPort . ' ' . $servicePort . ' ' . $logLevel;
 
     log::add('plugwise', 'debug', 'Lancement démon plugwise : ' . $cmd);
 
@@ -284,11 +282,11 @@ class plugwise extends eqLogic {
       $i++;
     }
     if ($i >= 30) {
-      log::add('plugwisewise', 'error', 'Impossible de lancer le démon plugwise, vérifiez le port', 'unableStartDeamon');
+      log::add('plugwise', 'error', 'Impossible de lancer le démon plugwise, vérifiez le port', 'unableStartDeamon');
       return false;
     }
     message::removeAll('plugwise', 'unableStartDeamon');
-    log::add('plugwise', 'info', 'Démon plugwise lancé');
+    log::add('plugwise', 'info', 'Démon upnp lancé');
     return true;
   }
 
