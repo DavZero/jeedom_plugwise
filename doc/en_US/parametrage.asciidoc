@@ -11,6 +11,6 @@ Sur la page de gestion des équipements, vous pouvez également :
 
 Nota : l'inclusion de nouveau equipement dans le reseau plugwise depuis Jeedom est en cours d'analyse.
 
- image::../images/plugwise_4.jpg
+image::../images/plugwise_4.jpg[]
 
 TIP: Si lors du démarrage du démon, certaines prise ne sont pas branché, celles ci ne pourront pas être créer dans Jeedom. Afin de les créer dans Jeedom a posteriori, il faut les brancher et cliquer sur le bouton Synchroniser de la page de gestion des equipements
