@@ -1,7 +1,7 @@
 ==== Configuration du plugin
 
 Une fois le plugin activé, les dépendances doivent s'installer automatiquement. Si ce n'est pas le cas ou si elle ne sont pas OK, cliquer sur relancer.
-Ensuite il faut définir le port utilisé pour la clé plugwise et un port qui n'est pas utilisé sur la machine herggent Jeedom (si vous ne mettez rien, le port utilisé sera 5001)
+Ensuite il faut définir le port USB utilisé pour la clé plugwise et un port pour le démon (si vous ne mettez rien, le port utilisé sera 5001)
 
 image::../images/plugwise_3.jpg[]
 
