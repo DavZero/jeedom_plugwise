@@ -6,7 +6,9 @@ réseau plugwise et les créer dans Jeedom. Ceci devrait prendre moins d'une min
 Ensuite vous configurer vos nouveaux equipement comme n'importe quel equipement Jeedom.
 
 Sur la page de gestion des équipements, vous pouvez également :
+
 * Exclure des equipements
+
 * Synchroniser les equipements entre le démon et Jeedom
 
 Nota : l'inclusion de nouveau equipement dans le reseau plugwise depuis Jeedom est en cours d'analyse.
