@@ -1,4 +1,4 @@
-==== Présentation
+==== Introduction
 
 Ce plugin permet la gestion des prises Circle/CirclePlus de Plugwise.
 
