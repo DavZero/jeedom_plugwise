@@ -1,5 +1,5 @@
 [panel,primary]
-.Le plugin nécessite t il des prérequis ?
+. Does the plugin require prerequisites?
 --
 Non, mais pour une utilisation plus économique, le plugin a besoin de votre géolocalisation (ou a minima de connaitre l'état de présence/absence).
 --
