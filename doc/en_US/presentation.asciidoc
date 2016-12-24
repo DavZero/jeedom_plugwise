@@ -1,5 +1,5 @@
 ==== Introduction
 
-Ce plugin permet la gestion des prises Circle/CirclePlus de Plugwise.
+This plugin is used to manage Plugwise's Circle/CirclePlus plugs.
 
 image::../images/plugwiseCircle_icon.png[]
