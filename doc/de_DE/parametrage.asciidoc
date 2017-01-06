@@ -1,4 +1,4 @@
-==== Paramétrage
+==== Einrichtung
 
 Il n'y a pas de paramétrage a faire en dehors de ceux du démon (voir le chapitre configuration). Une fois celui ci configuré, il va rechercher les prises de votre
 réseau plugwise et les créer dans Jeedom. Ceci devrait prendre moins d'une minute.
