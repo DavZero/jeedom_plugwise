@@ -48,7 +48,7 @@ sudo npm cache clean
 sudo rm -rf node_modules
 
 echo 80 > /tmp/plugwise_dep
-sudo npm install --unsafe-perm serialport
+sudo npm install --unsafe-perm serialport@4.0.7
 echo 82 > /tmp/plugwise_dep
 sudo npm install --unsafe-perm events
 echo 84 > /tmp/plugwise_dep
