@@ -11,10 +11,20 @@ if [ ! -d "$DIRECTORY" ]; then
   sudo chown -R www-data $DIRECTORY
 fi
 echo 10 > /tmp/plugwise_dep
-actual=`nodejs -v`;
-echo "Version actuelle : ${actual}"
+#actual=`nodejs -v`;
+#echo "Version actuelle : ${actual}"
+if [ -x /usr/bin/nodejs ]; then
+  actual=`nodejs -v | awk -F v '{ print $2 }' | awk -F . '{ print $1 }'`;
+  echo "Version actuelle : ${actual}"
+else
+  actual=0;
+  echo "Nodejs non installé"
+fi
 
-if [[ $actual == *"4."* || $actual == *"5."* || $actual == *"6."* || $actual == *"7."* || $actual == *"8."*]]
+sudo apt-get update
+
+
+if [ $actual -ge 8 ]
 then
   echo "Ok, version suffisante";
 else
@@ -33,7 +43,7 @@ else
     rm node_latest_armhf.deb
   else
     echo "Utilisation du dépot officiel"
-    curl -sL https://deb.nodesource.com/setup_5.x | sudo -E bash -
+    curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
     sudo apt-get install -y nodejs
   fi
   new=`nodejs -v`;
@@ -48,7 +58,7 @@ sudo npm cache clean
 sudo rm -rf node_modules
 
 echo 80 > /tmp/plugwise_dep
-sudo npm install --unsafe-perm serialport@4.0.7
+sudo npm install --unsafe-perm serialport
 echo 82 > /tmp/plugwise_dep
 sudo npm install --unsafe-perm events
 echo 84 > /tmp/plugwise_dep

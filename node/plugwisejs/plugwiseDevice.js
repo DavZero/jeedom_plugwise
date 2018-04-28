@@ -6,7 +6,7 @@ var PlugwiseIncomingMessage = require ('./plugwiseMessage.js').PlugwiseIncomingM
 var PlugwiseOutgoingMessage = require ('./plugwiseMessage.js').PlugwiseOutgoingMessage;
 var PlugwiseMessageConst = require ('./plugwiseMessage.js').PlugwiseMessageConst;
 var EventEmitter = require('events');
-var serialport = require('serialport');
+var Serialport = require('serialport');
 
 var deviceType = {
   STICK:{name:"Stick"},
@@ -60,14 +60,11 @@ class PlugwiseStick extends PlugwiseDevice {
     this._inclusionMode = false;
 
     // connect to the serial port of the 'stick'
-    this._sp = new serialport.SerialPort(port, {
-        baudrate: 115200,
-        parser: serialport.parsers.readline('\n')
-    });
+    this._sp = new Serialport(port);
+    if ( this._sp.settings.baudRate ) this._sp.settings.baudRate=115200;
+    else this._sp.settings.baudrate=115200;
 
-    /*this._sp.on('error', (err) => {
-      this.emit('plugwiseExitError',err.message);
-    })*/
+    this._sp.pipe(new SerialPort.parsers.Readline({delimiter: '\n'}));
 
     this._sp.on('data', this.processData.bind(this)); //bind force function to be call with this instance
 
