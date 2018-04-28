@@ -21,9 +21,6 @@ else
   echo "Nodejs non installé"
 fi
 
-sudo apt-get update
-
-
 if [ $actual -ge 8 ]
 then
   echo "Ok, version suffisante";
