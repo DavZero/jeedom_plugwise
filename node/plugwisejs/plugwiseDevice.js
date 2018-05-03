@@ -491,7 +491,8 @@ class PlugwiseCircle extends PlugwiseDevice {
   _getCorrectedPulses(pulses)
   {
     var correctedPulse = Math.pow(pulses + this._calibration.offNoise, 2) * this._calibration.gainB + (pulses + this._calibration.offNoise) * this._calibration.gainA + this._calibration.offTot;
-    return correctedPulse;
+    return ((pulses > 0 && correctedPulse > 0) || (pulses < 0 && correctedPulse < 0)) ? correctedPulse : 0);
+    //return (correctedPulse > 0 ? correctedPulse : 0);
   }
 
   _pulsesToWatt(correctedPulses)

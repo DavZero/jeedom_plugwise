@@ -181,9 +181,9 @@ var PlugwiseMessageConst = {
   POWER_INFORMATION_REQUEST:{value:'0012', format: function(device,data) {
     return device.getMac();
   }},
-  POWER_INFORMATION_RESPONSE:{value:'0013', regEx:'(\\w{16})(\\w{4})(\\w{4})(\\w{8})(\\w{4})(\\w{4})(\\w{4})',
+  POWER_INFORMATION_RESPONSE:{value:'0013', regEx:'(\\w{16})(\\w{4})(\\w{4})(\\w{8})(\\w{8})(\\w{4})',
   parser:function(data) {
-    var regularExpression = new RegExp('^(\\w{16})(\\w{4})(\\w{4})(\\w{8})(\\w{4})(\\w{4})(\\w{4})$');
+    var regularExpression = new RegExp('^(\\w{16})(\\w{4})(\\w{4})(\\w{8})(\\w{8})(\\w{4})$');
     var parsed = data.match(regularExpression);
     var out = {};
     /*if (data[3] === 'FFFF') {
@@ -194,9 +194,8 @@ var PlugwiseMessageConst = {
       out.pulsesOneSecond = parseInt(parsed[2], 16);
       out.pulsesEightSeconds = parseInt(parsed[3], 16);
       out.pulsesTotal = parseInt(parsed[4], 16);
-      out.unknow1 = parsed[5];
-      out.unknow2 = parsed[6];
-      out.unknow3 = parsed[7];
+      out.pulsesProdHour = parseInt(parsed[5], 16);
+      out.unknow = parsed[6];
     }
     Logger.log("InsideParser - POWER_INFORMATION_RESPONSE: " + JSON.stringify(out), LogType.DEBUG);
     return out
