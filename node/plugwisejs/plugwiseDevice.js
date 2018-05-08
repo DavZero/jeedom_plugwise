@@ -121,12 +121,12 @@ class PlugwiseStick extends PlugwiseDevice {
 
   processData(data)
   {
+    Logger.log("Message reçu brut : " + data, LogType.DEBUG);
     if (data.substring(0,1) =='#' || (data.substring(0,9)=='000D6F000'))
     {
       Logger.log("Message igonré : " + data, LogType.DEBUG);
       return;
     }
-    Logger.log("Message reçu brut : " + data, LogType.DEBUG);
     var message = new PlugwiseIncomingMessage(data);
     if (message.hasError()) {
       Logger.log(message.getError(), LogType.ERROR);
