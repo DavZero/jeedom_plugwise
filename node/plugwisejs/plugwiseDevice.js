@@ -6,7 +6,7 @@ var PlugwiseIncomingMessage = require ('./plugwiseMessage.js').PlugwiseIncomingM
 var PlugwiseOutgoingMessage = require ('./plugwiseMessage.js').PlugwiseOutgoingMessage;
 var PlugwiseMessageConst = require ('./plugwiseMessage.js').PlugwiseMessageConst;
 var EventEmitter = require('events');
-var Serialport = require('serialport');
+var SerialPort = require('serialport');
 
 var deviceType = {
   STICK:{name:"Stick"},
@@ -60,7 +60,7 @@ class PlugwiseStick extends PlugwiseDevice {
     this._inclusionMode = false;
 
     // connect to the serial port of the 'stick'
-    this._sp = new Serialport(port);
+    this._sp = new SerialPort(port);
     if ( this._sp.settings.baudRate ) this._sp.settings.baudRate=115200;
     else this._sp.settings.baudrate=115200;
 
