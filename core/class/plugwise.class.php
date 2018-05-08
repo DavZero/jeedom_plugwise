@@ -247,7 +247,7 @@ class plugwise extends eqLogic {
     if ($deamon_info['launchable'] != 'ok') {
       throw new Exception(__('Veuillez vérifier la configuration', __FILE__));
     }
-    log::add('upnp', 'info', 'Lancement du démon plugwise');
+    log::add('plugwise', 'info', 'Lancement du démon plugwise');
     $serialPort = jeedom::getUsbMapping(config::byKey('serialPort', 'plugwise'));
     if ($serialPort == '' ) {
       throw new Exception(__('Le port : ', __FILE__) . $port . __(' n\'existe pas', __FILE__));
@@ -286,7 +286,7 @@ class plugwise extends eqLogic {
       return false;
     }
     message::removeAll('plugwise', 'unableStartDeamon');
-    log::add('plugwise', 'info', 'Démon upnp lancé');
+    log::add('plugwise', 'info', 'Démon plugwise lancé');
     return true;
   }
 
