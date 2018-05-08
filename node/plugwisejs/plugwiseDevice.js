@@ -58,15 +58,19 @@ class PlugwiseStick extends PlugwiseDevice {
     this._acknowledgedQueue.Count = 0;
     this._currentMessage = {};
     this._inclusionMode = false;
+    //this._parser = new SerialPort.parsers.Readline({delimiter: '\n'});
+    //this._parser.on('data', this.processData.bind(this)); //bind force function to be call with this instance
+
+    var parser = new SerialPort.parsers.Readline({delimiter: '\n'});
+    parser.on('data', this.processData.bind(this)); //bind force function to be call with this instance
 
     // connect to the serial port of the 'stick'
-    this._sp = new SerialPort(port);
-    if ( this._sp.settings.baudRate ) this._sp.settings.baudRate=115200;
-    else this._sp.settings.baudrate=115200;
+    this._sp = new SerialPort(port, { baudRate: 115200 });
+    //if ( this._sp.settings.baudRate ) this._sp.settings.baudRate=115200;
+    //else this._sp.settings.baudrate=115200;
 
-    this._sp.pipe(new SerialPort.parsers.Readline({delimiter: '\n'}));
-
-    this._sp.on('data', this.processData.bind(this)); //bind force function to be call with this instance
+    this._sp.pipe(parser);
+    //this._sp.on('data', this.processData.bind(this)); //bind force function to be call with this instance
 
     this._sp.on('open', () => {
         this._opened = true;
@@ -109,7 +113,7 @@ class PlugwiseStick extends PlugwiseDevice {
 
   shutDown()
   {
-    if (this._sp.isOpen()) this._sp.close();
+    if (this._sp.isOpen) this._sp.close();
   }
 
   findDeviceByMac(mac)
