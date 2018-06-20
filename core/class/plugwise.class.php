@@ -119,7 +119,7 @@ class plugwise extends eqLogic {
         {
           $deltaConsumption = $consumptionThisHour-$oldConsumptionThisHour;
           $totalConsumption = $cmdTotal->getConfiguration('value',0);
-          if ($deltaConsumption > 0) $totalConsumption += $deltaConsumption;
+          if ($deltaConsumption >= 0) $totalConsumption += $deltaConsumption;
           else $totalConsumption += $consumptionThisHour;
           if ($eqp->checkAndUpdateCmd($cmdTotal,$totalConsumption))
           {
