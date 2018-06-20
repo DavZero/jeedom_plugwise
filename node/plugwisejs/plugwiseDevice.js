@@ -12,6 +12,7 @@ var deviceType = {
   STICK:{name:"Stick"},
   CIRCLE:{name:"Circle"},
   CIRCLEPLUS:{name:"CirclePlus"},
+  SENSE:{name:"Sense"},
   UNDEFINDED:{name:"Unknow"}
 }
 
@@ -43,6 +44,55 @@ class PlugwiseDevice extends EventEmitter {
   getHardwareVersion()
   {
     return this._hardwareVersion;
+  }
+}
+
+class PlugwiseSense extends PlugwiseDevice {
+  constructor(mac, plugwiseStick){
+    super(mac);
+    this._stick = plugwiseStick;
+    this.init(() => {
+      Logger.log("Initialisation de l'equipement " + this.getType().name + " avec adresse MAC : " + this._mac + " terminée avec succès.");
+    });
+  }
+
+  getType() {
+    return deviceType.SENSE;
+  }
+
+  init(callback)
+  {
+    //GetInformation
+    this.updateInformation(() => {
+      //Calibrage
+      //Afin de limiter le nombre de message, on ne fait la calibration que lorsque c'est nécessaire
+      //this.calibration();
+      if (callback) callback();
+    });
+  }
+
+  _updateInformation(data)
+  {
+    this._firmwareVersion = data.firmwareVersion;
+    this._hardwareVersion = data.hardwareVersion;
+    this._date =  data.date;
+    //this._hertz = data.hertz;
+    this._stick.emit('senseUpdateInfo', this);
+  }
+
+  updateInformation(callback)
+  {
+    this._stick.sendMessage (new PlugwiseOutgoingMessage(this,PlugwiseMessageConst.DEVICE_INFORMATION_REQUEST,'',(device,messageData) => {
+      device._updateInformation(messageData);
+      if (callback) callback();
+    }));
+  }
+
+  _updateSenseInfo(data)
+  {
+    this._humidity = data.humidity;
+    this._temperature = data.temperature;
+    this._stick.emit('senseUpdateSenseInfo', this);
   }
 }
 
@@ -290,6 +340,15 @@ class PlugwiseStick extends PlugwiseDevice {
           else this.addCircle(message.Data.mac);
         }
         break;
+      case PlugwiseMessageConst.WAKEUP_ANNONCE.value:
+        var device = this.findDeviceByMac(message.Data.mac);
+        //if (!device) this.addCircle(message.Data.mac);
+        break;
+      case PlugwiseMessageConst.SENSE_REPORT_RESPONSE.value:
+        var device = this.findDeviceByMac(message.Data.mac);
+        if (!device) device = this.addSense(message.Data.mac);
+        device._updateSenseInfo(message.Data);
+        break;
       default:
         Logger.log('Le code de retour ' + message.Type + ' n\'est pas géré : ' + data +'. Contacter le developpeur', LogType.WARNING);
         break;
@@ -397,6 +456,15 @@ class PlugwiseStick extends PlugwiseDevice {
     if (!this._deviceList[mac])
       this._deviceList[mac] = new PlugwiseCircle(mac,this);
     else this._deviceList[mac].updateInformation();
+    return this._deviceList[mac];
+  }
+
+  addSense(mac)
+  {
+    if (!this._deviceList[mac])
+      this._deviceList[mac] = new PlugwiseSense(mac,this);
+    else this._deviceList[mac].updateInformation();
+    this._deviceList[mac];
   }
 
   removeCircle(mac)
@@ -430,7 +498,7 @@ class PlugwiseCircle extends PlugwiseDevice {
     super(mac);
     this._stick = plugwiseStick;
     this.init(() => {
-      Logger.log("Initilaisation de l'equipement " + this.getType().name + " avec adresse MAC : " + this._mac + " terminée avec succès.");
+      Logger.log("Initialisation de l'equipement " + this.getType().name + " avec adresse MAC : " + this._mac + " terminée avec succès.");
     });
   }
 
@@ -512,7 +580,7 @@ class PlugwiseCircle extends PlugwiseDevice {
   {
     this._power1s = this._pulsesToWatt(this._getCorrectedPulses(data.pulsesOneSecond));
     this._power8s = this._pulsesToWatt(this._getCorrectedPulses(data.pulsesEightSeconds))/8;
-    this._consumption = this._pulsesTokWh(this._getCorrectedPulses(data.pulsesTotal));
+    this._consumption = this._pulsesTokWh(this._getCorrectedPulses(data.pulsesConsoHour));
     this._stick.emit('circleUpdatePowerInfo', this);
   }
 

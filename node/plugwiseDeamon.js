@@ -142,6 +142,17 @@ plugwiseStick.on('circleRemove', function(macAddress) {
   sendToJeedom({eventType: 'removeEquipment', mac: macAddress});
 });
 
+plugwiseStick.on('senseUpdateInfo', function(device) {
+  sendToJeedom({eventType: 'updateInfo', firmwareVersion : device.getFirmwareVersion(), hardwareVersion : device.getHardwareVersion(),
+  mac: device.getMac(), eqpType: device.getType().name});
+});
+
+plugwiseStick.on('senseUpdateSenseInfo', function(device) {
+  sendToJeedom({eventType: 'senseValue', humidity: device.getHumidity(), temperature: device.getTemperature(), mac: device.getMac()});
+});
+
+senseUpdateInfo
+
 //Serveur pour la reception des message depuis jeedom
 Logger.log("Création du serveur sur le port "+serverPort, LogType.DEBUG);
 //Create server for manage Jeedom->plugwisejs

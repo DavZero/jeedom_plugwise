@@ -193,7 +193,7 @@ var PlugwiseMessageConst = {
       out.mac = parsed[1];
       out.pulsesOneSecond = parseInt(parsed[2], 16);
       out.pulsesEightSeconds = parseInt(parsed[3], 16);
-      out.pulsesTotal = parseInt(parsed[4], 16);
+      out.pulsesConsoHour = parseInt(parsed[4], 16);
       out.pulsesProdHour = parseInt(parsed[5], 16);
       out.unknow = parsed[6];
     }
@@ -220,6 +220,44 @@ var PlugwiseMessageConst = {
       out.nodeID = parsed[3];
     }
     Logger.log("InsideParser - DEVICE_ROLECALL_RESPONSE: " + JSON.stringify(out), LogType.DEBUG);
+    return out
+  }},
+  WAKEUP_ANNONCE:{value:'004F', regEx:'(\\w{16})(\\w{4})',
+  parser:function(data) {
+    var regularExpression = new RegExp('^(\\w{16})(\\w{4})$');
+    var parsed = data.match(regularExpression);
+    var out = {};
+    if (parsed) {
+      out.mac = parsed[1];
+      out.annouceType = parsed[2];
+    }
+    Logger.log("InsideParser - WAKEUP_ANNONCE: " + JSON.stringify(out), LogType.INFO);
+    return out
+  }},
+  SENSE_REPORT_RESPONSE:{value:'0105', regEx:'(\\w{16})(\\w{4})(\\w{4})',
+  parser:function(data) {
+    var regularExpression = new RegExp('^(\\w{16})(\\w{4})(\\w{4})$');
+    var parsed = data.match(regularExpression);
+    var out = {};
+    if (parsed) {
+      out.mac = parsed[1];
+      out.humidity = 125.0 * (parseInt(parsed[2], 16) / 65536.0) - 6.0;
+      out.temperature = 175.72 * (parseInt(parsed[3], 16) / 65536.0) - 46.85;
+    }
+    Logger.log("InsideParser - SENSE_REPORT: " + JSON.stringify(out), LogType.INFO);
+    return out
+  }},
+  SWITCH_REPORT_RESPONSE:{value:'0056', regEx:'(\\w{16})(\\w{2})(\\w{2})',
+  parser:function(data) {
+    var regularExpression = new RegExp('^(\\w{16})(\\w{2})(\\w{2})$');
+    var parsed = data.match(regularExpression);
+    var out = {};
+    if (parsed) {
+      out.mac = parsed[1];
+      out.portMask = parseInt(parsed[2], 16);
+      out.state = parseInt(parsed[3], 16)==1?1:0;
+    }
+    Logger.log("InsideParser - SWITCH_REPORT: " + JSON.stringify(out), LogType.DEBUG);
     return out
   }},
   REMOVE_NODE_REQUEST:{value:'001C', format: function(device,data) {

@@ -78,7 +78,7 @@ class plugwise extends eqLogic {
         $puissance = init('power');
         if (is_object($cmd))
         {
-          $cmd->event($puissance); // Pas sur qu'il faille le faire même si la valeur ne change pas?
+          $eqp->checkAndUpdateCmd($cmd,init('power'))
         }
         else
         {
@@ -87,10 +87,9 @@ class plugwise extends eqLogic {
         }
 
         $cmd = $eqp->getCmd('info', 'puissance8s');
-        $puissance8s = init('power8s');
         if (is_object($cmd))
         {
-          $cmd->event($puissance8s); // Pas sur qu'il faille le faire même si la valeur ne change pas?
+          $eqp->checkAndUpdateCmd($cmd,init('power8s'))
         }
         else
         {
@@ -100,9 +99,15 @@ class plugwise extends eqLogic {
 
         $cmd = $eqp->getCmd('info', 'consumptionThisHour');
         $consumptionThisHour = init('consumptionThisHour');
+        $oldConsumptionThisHour = 0;
         if (is_object($cmd))
         {
-          $cmd->event($consumptionThisHour); // Pas sur qu'il faille le faire même si la valeur ne change pas?
+          $oldConsumptionThisHour = $cmd->getConfiguration('value',0);
+          if ($eqp->checkAndUpdateCmd($cmd,$consumptionThisHour))
+          {
+            $cmd->setConfiguration('value',$consumptionThisHour);
+            $cmd->save();
+          }
         }
         else
         {
@@ -112,13 +117,15 @@ class plugwise extends eqLogic {
         $cmdTotal = $eqp->getCmd('info', 'consumptionTotal');
         if (is_object($cmdTotal) && is_object($cmd))
         {
-          $deltaConsumption = $consumptionThisHour-$cmd->execCmd();
-          $cmd->setCollectDate('');
-          $totalConsumption = $cmdTotal->execCmd();
-          $cmdTotal->setCollectDate('');
+          $deltaConsumption = $consumptionThisHour-$oldConsumptionThisHour;
+          $totalConsumption = $cmdTotal->getConfiguration('value',0);
           if ($deltaConsumption > 0) $totalConsumption += $deltaConsumption;
           else $totalConsumption += $consumptionThisHour;
-          $cmdTotal->event($totalConsumption); // Pas sur qu'il faille le faire même si la valeur ne change pas?
+          if ($eqp->checkAndUpdateCmd($cmdTotal,$totalConsumption))
+          {
+            $cmdTotal->setConfiguration('value',$totalConsumption);
+            $cmdTotal->save();
+          }
         }
         else
         {
@@ -135,12 +142,42 @@ class plugwise extends eqLogic {
 
         if (is_object($cmd))
         {
-          $cmd->event($newVal); // Pas sur qu'il faille le faire même si la valeur ne change pas?
+          $eqp->checkAndUpdateCmd($cmd,$newVal);
         }
         else
         {
           log::add('plugwise', 'error', 'Impossible de trouver la commande de statut de l\'equipement ' . $macAddress);
           //throw new Exception('Impossible de trouver la commande de statut de l\'equipement ' + $macAddress);
+        }
+        break;
+
+      case 'senseValue':
+        log::add('plugwise', 'info', 'Mise a jour des infos de l\'equipement ' .$eqp->getConfiguration('macAddress') );
+        if (init('humidity'))
+        {
+          $cmd = $eqp->getCmd('info', 'humidity');
+          if (is_object($cmd))
+          {
+            $eqp->checkAndUpdateCmd($cmd,init('humidity'));
+          }
+          else
+          {
+            log::add('plugwise', 'error', 'Impossible de trouver la commande humidité de l\'equipement ' . $macAddress);
+            //throw new Exception('Impossible de trouver la commande de statut de l\'equipement ' + $macAddress);
+          }
+        }
+        if (init('temperature'))
+        {
+          $cmd = $eqp->getCmd('info', 'temperature');
+          if (is_object($cmd))
+          {
+            $eqp->checkAndUpdateCmd($cmd,init('temperature'));
+          }
+          else
+          {
+            log::add('plugwise', 'error', 'Impossible de trouver la commande temperature de l\'equipement ' . $macAddress);
+            //throw new Exception('Impossible de trouver la commande de statut de l\'equipement ' + $macAddress);
+          }
         }
         break;
 
@@ -493,6 +530,37 @@ class plugwise extends eqLogic {
       {
         //Add command for stick
       }
+      else if ($this->getConfiguration('type') == 'Sense')
+      {
+        //Puissance moyenne sur 8 secondes
+        $cmd = $this->getCmd(null, 'humidity');
+    		if (!is_object($cmd)) {
+    			$cmd = new plugwiseCmd();
+    			$cmd->setName(__('Humidité', __FILE__));
+    			$cmd->setLogicalId('humidity');
+    			$cmd->setEqLogic_id($this->getId());
+    			$cmd->setUnite('%');
+    			$cmd->setType('info');
+    			$cmd->setSubType('numeric');
+    			$cmd->setIsVisible(0);
+    			$cmd->save();
+    		}
+
+        //Puissance moyenne sur 8 secondes
+        $cmd = $this->getCmd(null, 'temperature');
+    		if (!is_object($cmd)) {
+    			$cmd = new plugwiseCmd();
+    			$cmd->setName(__('Temperature', __FILE__));
+    			$cmd->setLogicalId('temperature');
+    			$cmd->setEqLogic_id($this->getId());
+    			$cmd->setUnite('°C');
+    			$cmd->setType('info');
+    			$cmd->setSubType('numeric');
+    			$cmd->setIsVisible(0);
+    			$cmd->save();
+    		}
+      }
+
 
 
   	} catch (Exception $e) {
@@ -598,9 +666,11 @@ class plugwiseCmd extends cmd {
         if ($this->getConfiguration('request') == 'RAZCONSUMPTION'){
           $cmdTotal = $this->getEqLogic()->getCmd('info', 'consumptionTotal');
           if (is_object($cmdTotal)){
-            $cmdTotal->setConfiguration('value',0);
-            $cmdTotal->save();
-            $cmdTotal->event(0);
+            if ($this->getEqLogic()->checkAndUpdate($this,0))
+            {
+              $cmdTotal->setConfiguration('value',0);
+              $cmdTotal->save();
+            }
           }
         }
         else plugwise::sendToController($this->getEqLogic()->getConfiguration('macAddress'),$this->getConfiguration('request'),$this->getConfiguration('parameters'));
