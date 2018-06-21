@@ -151,8 +151,6 @@ plugwiseStick.on('senseUpdateSenseInfo', function(device) {
   sendToJeedom({eventType: 'senseValue', humidity: device.getHumidity(), temperature: device.getTemperature(), mac: device.getMac()});
 });
 
-senseUpdateInfo
-
 //Serveur pour la reception des message depuis jeedom
 Logger.log("Création du serveur sur le port "+serverPort, LogType.DEBUG);
 //Create server for manage Jeedom->plugwisejs

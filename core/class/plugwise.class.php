@@ -78,7 +78,7 @@ class plugwise extends eqLogic {
         $puissance = init('power');
         if (is_object($cmd))
         {
-          $eqp->checkAndUpdateCmd($cmd,init('power'))
+          $eqp->checkAndUpdateCmd($cmd,init('power'));
         }
         else
         {
@@ -89,7 +89,7 @@ class plugwise extends eqLogic {
         $cmd = $eqp->getCmd('info', 'puissance8s');
         if (is_object($cmd))
         {
-          $eqp->checkAndUpdateCmd($cmd,init('power8s'))
+          $eqp->checkAndUpdateCmd($cmd,init('power8s'));
         }
         else
         {
