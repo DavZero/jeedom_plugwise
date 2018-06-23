@@ -131,7 +131,7 @@ plugwiseStick.on('circleUpdateInfo', function(device) {
 });
 
 plugwiseStick.on('circleUpdatePowerInfo', function(device) {
-  sendToJeedom({eventType: 'updatePowerInfo', power : device.getInstantPower1s(), power8s : device.getInstantPower8s(), consumptionThisHour: device.getConsumption(), mac: device.getMac()});
+  sendToJeedom({eventType: 'updatePowerInfo', power : device.getInstantPower1s(), power8s : device.getInstantPower8s(), consumptionThisHour: device.getConsumptionThisHour(), mac: device.getMac()});
 });
 
 plugwiseStick.on('circleChangeState', function(device) {

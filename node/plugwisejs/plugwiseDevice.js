@@ -64,9 +64,6 @@ class PlugwiseSense extends PlugwiseDevice {
   {
     //GetInformation
     this.updateInformation(() => {
-      //Calibrage
-      //Afin de limiter le nombre de message, on ne fait la calibration que lorsque c'est nécessaire
-      //this.calibration();
       if (callback) callback();
     });
   }
@@ -82,10 +79,18 @@ class PlugwiseSense extends PlugwiseDevice {
 
   updateInformation(callback)
   {
-    this._stick.sendMessage (new PlugwiseOutgoingMessage(this,PlugwiseMessageConst.DEVICE_INFORMATION_REQUEST,'',(device,messageData) => {
+    //Ces informations sont elles dispo pour le sense???
+    /*this._stick.sendMessage (new PlugwiseOutgoingMessage(this,PlugwiseMessageConst.DEVICE_INFORMATION_REQUEST,'',(device,messageData) => {
       device._updateInformation(messageData);
       if (callback) callback();
-    }));
+    }));*/
+    var data = {};
+    data.firmwareVersion = 'Not Implemented';
+    data.hardwareVersion = 'Not Implemented';
+    data.date = 'Not Implemented';
+    this._updateInformation(data);
+
+    if (callback) callback();
   }
 
   _updateSenseInfo(data)
@@ -93,6 +98,16 @@ class PlugwiseSense extends PlugwiseDevice {
     this._humidity = data.humidity;
     this._temperature = data.temperature;
     this._stick.emit('senseUpdateSenseInfo', this);
+  }
+
+  getHumidity()
+  {
+    return this._humidity;
+  }
+
+  getTemperature()
+  {
+    return this._temperature;
   }
 }
 
@@ -112,7 +127,9 @@ class PlugwiseStick extends PlugwiseDevice {
     //this._parser.on('data', this.processData.bind(this)); //bind force function to be call with this instance
 
     var parser = new SerialPort.parsers.Readline({delimiter: '\n'});
-    parser.on('data', this.processData.bind(this)); //bind force function to be call with this instance
+    parser.on('data', this.processData.bind(this)).catch((err) => {
+      Logger.log("Catch error during processing message : " + err, LogType.DEBUG);
+    }); //bind force function to be call with this instance
 
     // connect to the serial port of the 'stick'
     this._sp = new SerialPort(port, { baudRate: 115200 });
@@ -464,7 +481,7 @@ class PlugwiseStick extends PlugwiseDevice {
     if (!this._deviceList[mac])
       this._deviceList[mac] = new PlugwiseSense(mac,this);
     else this._deviceList[mac].updateInformation();
-    this._deviceList[mac];
+    return this._deviceList[mac];
   }
 
   removeCircle(mac)
@@ -532,9 +549,10 @@ class PlugwiseCircle extends PlugwiseDevice {
     return this._power8s;
   }
 
-  getConsumption()
+  getConsumptionThisHour()
   {
-    return this._consumption;
+    return this._consumptionThisHour;
+    //in Wh instead of KWh return this._consumptionThisHour*1000;
   }
 
   getFrequency()
@@ -580,7 +598,7 @@ class PlugwiseCircle extends PlugwiseDevice {
   {
     this._power1s = this._pulsesToWatt(this._getCorrectedPulses(data.pulsesOneSecond));
     this._power8s = this._pulsesToWatt(this._getCorrectedPulses(data.pulsesEightSeconds))/8;
-    this._consumption = this._pulsesTokWh(this._getCorrectedPulses(data.pulsesConsoHour));
+    this._consumptionThisHour = this._pulsesTokWh(this._getCorrectedPulses(data.pulsesConsoHour));
     this._stick.emit('circleUpdatePowerInfo', this);
   }
 

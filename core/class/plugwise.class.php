@@ -75,7 +75,6 @@ class plugwise extends eqLogic {
       case 'updatePowerInfo':
         log::add('plugwise', 'info', 'Mise a jour la consommation de l\'equipement ' .$eqp->getConfiguration('macAddress') );
         $cmd = $eqp->getCmd('info', 'puissance');
-        $puissance = init('power');
         if (is_object($cmd))
         {
           $eqp->checkAndUpdateCmd($cmd,init('power'));

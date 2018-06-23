@@ -222,16 +222,16 @@ var PlugwiseMessageConst = {
     Logger.log("InsideParser - DEVICE_ROLECALL_RESPONSE: " + JSON.stringify(out), LogType.DEBUG);
     return out
   }},
-  WAKEUP_ANNONCE:{value:'004F', regEx:'(\\w{16})(\\w{4})',
+  WAKEUP_ANNONCE_RESPONSE:{value:'004F', regEx:'(\\w{16})(\\w{2})',
   parser:function(data) {
-    var regularExpression = new RegExp('^(\\w{16})(\\w{4})$');
+    var regularExpression = new RegExp('^(\\w{16})(\\w{2})$');
     var parsed = data.match(regularExpression);
     var out = {};
     if (parsed) {
       out.mac = parsed[1];
       out.annouceType = parsed[2];
     }
-    Logger.log("InsideParser - WAKEUP_ANNONCE: " + JSON.stringify(out), LogType.INFO);
+    Logger.log("InsideParser - WAKEUP_ANNONCE: " + JSON.stringify(out), LogType.DEBUG);
     return out
   }},
   SENSE_REPORT_RESPONSE:{value:'0105', regEx:'(\\w{16})(\\w{4})(\\w{4})',
@@ -244,7 +244,7 @@ var PlugwiseMessageConst = {
       out.humidity = 125.0 * (parseInt(parsed[2], 16) / 65536.0) - 6.0;
       out.temperature = 175.72 * (parseInt(parsed[3], 16) / 65536.0) - 46.85;
     }
-    Logger.log("InsideParser - SENSE_REPORT: " + JSON.stringify(out), LogType.INFO);
+    Logger.log("InsideParser - SENSE_REPORT_RESPONSE: " + JSON.stringify(out), LogType.DEBUG);
     return out
   }},
   SWITCH_REPORT_RESPONSE:{value:'0056', regEx:'(\\w{16})(\\w{2})(\\w{2})',
