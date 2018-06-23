@@ -665,7 +665,7 @@ class plugwiseCmd extends cmd {
         if ($this->getConfiguration('request') == 'RAZCONSUMPTION'){
           $cmdTotal = $this->getEqLogic()->getCmd('info', 'consumptionTotal');
           if (is_object($cmdTotal)){
-            if ($this->getEqLogic()->checkAndUpdateCmd($this,0))
+            if ($this->getEqLogic()->checkAndUpdateCmd($cmdTotal,0))
             {
               $cmdTotal->setConfiguration('value',0);
               $cmdTotal->save();

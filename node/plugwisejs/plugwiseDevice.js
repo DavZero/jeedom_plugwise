@@ -127,9 +127,7 @@ class PlugwiseStick extends PlugwiseDevice {
     //this._parser.on('data', this.processData.bind(this)); //bind force function to be call with this instance
 
     var parser = new SerialPort.parsers.Readline({delimiter: '\n'});
-    parser.on('data', this.processData.bind(this)).catch((err) => {
-      Logger.log("Catch error during processing message : " + err, LogType.DEBUG);
-    }); //bind force function to be call with this instance
+    parser.on('data', this.processData.bind(this));
 
     // connect to the serial port of the 'stick'
     this._sp = new SerialPort(port, { baudRate: 115200 });
