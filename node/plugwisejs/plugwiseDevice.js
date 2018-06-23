@@ -190,183 +190,188 @@ class PlugwiseStick extends PlugwiseDevice {
 
   processData(data)
   {
-    Logger.log("Message reçu brut : " + data, LogType.DEBUG);
-    if (data.substring(0,1) =='#' || (data.substring(0,9)=='000D6F000'))
+    try
     {
-      Logger.log("Message igonré : " + data, LogType.DEBUG);
-      return;
-    }
-    var message = new PlugwiseIncomingMessage(data);
-    if (message.hasError()) {
-      Logger.log(message.getError(), LogType.ERROR);
-      this.emit('plugwiseError',message.getError());
-      return;
-    }
-    //Logger.log("Analyse du code : " + message.Type, LogType.DEBUG);
-    switch (message.Type)
-    {
-      case PlugwiseMessageConst.ACKNOWLEDGEMENT.value:
-        //Logger.log("Analyse du sous-code : " + message.Data.subtype, LogType.DEBUG);
-        var acknowledgementMessageConst = PlugwiseMessageConst.ACKNOWLEDGEMENT;
-        switch (message.Data.subtype)
-        {
-          case acknowledgementMessageConst.SUCCESS.value:
-            if (!this._currentMessage)
-            {
-              Logger.log('Message de confirmation de reception de message non attendu ' + data, LogType.WARNING);
-            }
-            else
-            {
-              this._currentMessage.sequence = message.Sequence;
-              this._currentMessage.dateAccepted = new Date();
-              if (this._currentMessage.getCallback())
+      Logger.log("Message reçu brut : " + data, LogType.DEBUG);
+      if (data.substring(0,1) =='#' || (data.substring(0,9)=='000D6F000'))
+      {
+        Logger.log("Message igonré : " + data, LogType.DEBUG);
+        return;
+      }
+      var message = new PlugwiseIncomingMessage(data);
+      if (message.hasError()) {
+        Logger.log(message.getError(), LogType.ERROR);
+        this.emit('plugwiseError',message.getError());
+        return;
+      }
+      //Logger.log("Analyse du code : " + message.Type, LogType.DEBUG);
+      switch (message.Type)
+      {
+        case PlugwiseMessageConst.ACKNOWLEDGEMENT.value:
+          //Logger.log("Analyse du sous-code : " + message.Data.subtype, LogType.DEBUG);
+          var acknowledgementMessageConst = PlugwiseMessageConst.ACKNOWLEDGEMENT;
+          switch (message.Data.subtype)
+          {
+            case acknowledgementMessageConst.SUCCESS.value:
+              if (!this._currentMessage)
               {
-                this._acknowledgedQueue[message.Sequence] = this._currentMessage;
-                this._acknowledgedQueue.Count++;
-                //On fait une vérification que le message a bien recu une réponse
-                this._acknowledgedQueue[message.Sequence].timeoutFunction = setTimeout((id) => {
-                  if (this._acknowledgedQueue[id])
-                  {
-                    Logger.log('Le message ' + this._acknowledgedQueue[id].output() + ' n\'a pas recu de réponse, on tente de le retransmettre', LogType.WARNING);
-                    this.resendMessage(this._acknowledgedQueue[id]);
-                    this._acknowledgedQueue.Count--;
-                    delete this._acknowledgedQueue[id];
-                  }
-                },TIMEOUT,message.Sequence);
+                Logger.log('Message de confirmation de reception de message non attendu ' + data, LogType.WARNING);
               }
-              delete this._currentMessage;
-              this.processMessageQueue();
-            }
-            break;
-          case acknowledgementMessageConst.ON.value:
-            //Extraction de la liste des messages en attente de réponse
-            Logger.log('******************Message en attente de réponse**********************',LogType.DEBUG);
-            for(var key in this._acknowledgedQueue) {
-              Logger.log(this._acknowledgedQueue[key].toString(),LogType.DEBUG);
-            }
-            Logger.log('******************Fin des messages en attente de réponse**********************',LogType.DEBUG);
+              else
+              {
+                this._currentMessage.sequence = message.Sequence;
+                this._currentMessage.dateAccepted = new Date();
+                if (this._currentMessage.getCallback())
+                {
+                  this._acknowledgedQueue[message.Sequence] = this._currentMessage;
+                  this._acknowledgedQueue.Count++;
+                  //On fait une vérification que le message a bien recu une réponse
+                  this._acknowledgedQueue[message.Sequence].timeoutFunction = setTimeout((id) => {
+                    if (this._acknowledgedQueue[id])
+                    {
+                      Logger.log('Le message ' + this._acknowledgedQueue[id].output() + ' n\'a pas recu de réponse, on tente de le retransmettre', LogType.WARNING);
+                      this.resendMessage(this._acknowledgedQueue[id]);
+                      this._acknowledgedQueue.Count--;
+                      delete this._acknowledgedQueue[id];
+                    }
+                  },TIMEOUT,message.Sequence);
+                }
+                delete this._currentMessage;
+                this.processMessageQueue();
+              }
+              break;
+            case acknowledgementMessageConst.ON.value:
+              //Extraction de la liste des messages en attente de réponse
+              Logger.log('******************Message en attente de réponse**********************',LogType.DEBUG);
+              for(var key in this._acknowledgedQueue) {
+                Logger.log(this._acknowledgedQueue[key].toString(),LogType.DEBUG);
+              }
+              Logger.log('******************Fin des messages en attente de réponse**********************',LogType.DEBUG);
+              if (!this.processResponse(message)){
+                //On vérifie que l'equipement existe bien sinon on le créer
+                var device = this.findDeviceByMac(message.Data.mac);
+                if (device) device._updateState(true);
+                else this.addCircle(message.Data.mac);
+              }
+              break;
+            case acknowledgementMessageConst.OFF.value:
             if (!this.processResponse(message)){
               //On vérifie que l'equipement existe bien sinon on le créer
               var device = this.findDeviceByMac(message.Data.mac);
-              if (device) device._updateState(true);
+              if (device) device._updateState(false);
               else this.addCircle(message.Data.mac);
             }
-            break;
-          case acknowledgementMessageConst.OFF.value:
+            case acknowledgementMessageConst.CLOCKSET.value:
+              this.processResponse(message);
+              break;
+            case acknowledgementMessageConst.ENABLEJOINING.value:
+            case acknowledgementMessageConst.DISABLEJOINING.value:
+              this.processResponse(message);
+              break;
+            case acknowledgementMessageConst.ERROR.value:
+              if (!this._currentMessage)
+              {
+                Logger.log('Message d\'avertissement de formattage incorrect sans message envoyé ' + data, LogType.WARNING);
+              }
+              else
+              {
+                Logger.log('L\'envoi du message ' + this._currentMessage.output() + ' ne s\'est pas executé correctement, code retour ' + message.Data.subtype +'. Ressayer et contacter le developpeur si c\'est régulier', LogType.ERROR);
+                this.emit('plugwiseError','L\'envoi du message ' + this._currentMessage.output() + ' ne s\'est pas executé correctement, code retour ' + message.Data.subtype +'. Ressayer et contacter le developpeur si c\'est régulier');
+                delete this._currentMessage;
+                this.processMessageQueue();
+              }
+              break;
+            case acknowledgementMessageConst.TIMEOUT.value:
+              var messageInError = this._currentMessage;
+              if (this._acknowledgedQueue[message.Sequence]){
+                clearTimeout(this._acknowledgedQueue[message.Sequence].timeoutFunction);
+                messageInError = this._acknowledgedQueue[message.Sequence];
+                delete this._acknowledgedQueue[message.Sequence];
+                this._acknowledgedQueue.Count--;
+              }
+
+              if (messageInError){
+                messageInError.updateReturnStatus(message.Data.subtype);
+                this.resendMessage(messageInError);
+              }
+              else{
+                Logger.log('Message de tiemout recu sans message envoyé ' + data, LogType.WARNING);
+              }
+              break;
+            default:
+              Logger.log('Le sous code de retour ' + message.Data.subtype + ' n\'est pas géré : ' + data +'. Contacter le developpeur', LogType.WARNING);
+              break;
+          }
+          break;
+        case PlugwiseMessageConst.NODE_AVAILABLE.value:
+          Logger.log('Réception demande d\'intégration au reseau de la prise :' + message.Data.mac, LogType.INFO);
+          if (this._inclusionMode){
+            Logger.log('Demande acceptée', LogType.INFO);
+            this.sendMessage(new PlugwiseOutgoingMessage(this,PlugwiseMessageConst.NEW_NODE_ACCEPTED_REQUEST,'01'+message.Data.mac ));
+            Logger.log('Intégration de la prise ' + message.Data.mac + 'dans le reseau prise en compte', LogType.INFO);
+          }
+          else {
+            Logger.log('Demande refusée', LogType.INFO);
+            this.sendMessage(new PlugwiseOutgoingMessage(this,PlugwiseMessageConst.NEW_NODE_ACCEPTED_REQUEST,'00'+message.Data.mac ));
+          }
+          break;
+        case PlugwiseMessageConst.NODE_ADDED_TO_NETWORK.value:
+          if (message.Data.mac != this.getMac()) this.addCircle(message.Data.mac);
+          break;
+        case PlugwiseMessageConst.REMOVE_NODE_REPLY.value:
+          if (!this.processResponse(message)){
+            Logger.log('Réception d\'une suppression d\'une prise sans l\'avoir demandé', LogType.WARNING);
+          }
+          break;
+        case PlugwiseMessageConst.INITIALISE_RESPONSE.value:
+          if (!this.processResponse(message)){
+            Logger.log('Réception d\'un retour d\'initialisation sans l\'avoir demandé', LogType.INFO);
+          }
+          break;
+        case PlugwiseMessageConst.POWER_INFORMATION_RESPONSE.value:
           if (!this.processResponse(message)){
             //On vérifie que l'equipement existe bien sinon on le créer
             var device = this.findDeviceByMac(message.Data.mac);
-            if (device) device._updateState(false);
+            if (device) device._updatePowerInfo(message.Data);
             else this.addCircle(message.Data.mac);
           }
-          case acknowledgementMessageConst.CLOCKSET.value:
-            this.processResponse(message);
-            break;
-          case acknowledgementMessageConst.ENABLEJOINING.value:
-          case acknowledgementMessageConst.DISABLEJOINING.value:
-            this.processResponse(message);
-            break;
-          case acknowledgementMessageConst.ERROR.value:
-            if (!this._currentMessage)
-            {
-              Logger.log('Message d\'avertissement de formattage incorrect sans message envoyé ' + data, LogType.WARNING);
-            }
-            else
-            {
-              Logger.log('L\'envoi du message ' + this._currentMessage.output() + ' ne s\'est pas executé correctement, code retour ' + message.Data.subtype +'. Ressayer et contacter le developpeur si c\'est régulier', LogType.ERROR);
-              this.emit('plugwiseError','L\'envoi du message ' + this._currentMessage.output() + ' ne s\'est pas executé correctement, code retour ' + message.Data.subtype +'. Ressayer et contacter le developpeur si c\'est régulier');
-              delete this._currentMessage;
-              this.processMessageQueue();
-            }
-            break;
-          case acknowledgementMessageConst.TIMEOUT.value:
-            var messageInError = this._currentMessage;
-            if (this._acknowledgedQueue[message.Sequence]){
-              clearTimeout(this._acknowledgedQueue[message.Sequence].timeoutFunction);
-              messageInError = this._acknowledgedQueue[message.Sequence];
-              delete this._acknowledgedQueue[message.Sequence];
-              this._acknowledgedQueue.Count--;
-            }
-
-            if (messageInError){
-              messageInError.updateReturnStatus(message.Data.subtype);
-              this.resendMessage(messageInError);
-            }
-            else{
-              Logger.log('Message de tiemout recu sans message envoyé ' + data, LogType.WARNING);
-            }
-            break;
-          default:
-            Logger.log('Le sous code de retour ' + message.Data.subtype + ' n\'est pas géré : ' + data +'. Contacter le developpeur', LogType.WARNING);
-            break;
-        }
-        break;
-      case PlugwiseMessageConst.NODE_AVAILABLE.value:
-        Logger.log('Réception demande d\'intégration au reseau de la prise :' + message.Data.mac, LogType.INFO);
-        if (this._inclusionMode){
-          Logger.log('Demande acceptée', LogType.INFO);
-          this.sendMessage(new PlugwiseOutgoingMessage(this,PlugwiseMessageConst.NEW_NODE_ACCEPTED_REQUEST,'01'+message.Data.mac ));
-          Logger.log('Intégration de la prise ' + message.Data.mac + 'dans le reseau prise en compte', LogType.INFO);
-        }
-        else {
-          Logger.log('Demande refusée', LogType.INFO);
-          this.sendMessage(new PlugwiseOutgoingMessage(this,PlugwiseMessageConst.NEW_NODE_ACCEPTED_REQUEST,'00'+message.Data.mac ));
-        }
-        break;
-      case PlugwiseMessageConst.NODE_ADDED_TO_NETWORK.value:
-        if (message.Data.mac != this.getMac()) this.addCircle(message.Data.mac);
-        break;
-      case PlugwiseMessageConst.REMOVE_NODE_REPLY.value:
-        if (!this.processResponse(message)){
-          Logger.log('Réception d\'une suppression d\'une prise sans l\'avoir demandé', LogType.WARNING);
-        }
-        break;
-      case PlugwiseMessageConst.INITIALISE_RESPONSE.value:
-        if (!this.processResponse(message)){
-          Logger.log('Réception d\'un retour d\'initialisation sans l\'avoir demandé', LogType.INFO);
-        }
-        break;
-      case PlugwiseMessageConst.POWER_INFORMATION_RESPONSE.value:
-        if (!this.processResponse(message)){
-          //On vérifie que l'equipement existe bien sinon on le créer
+          break;
+        case PlugwiseMessageConst.DEVICE_ROLECALL_RESPONSE.value:
+          if (!this.processResponse(message)){
+            this.getCirclePlus()._roleCall(message.Data);
+          }
+          break;
+        case PlugwiseMessageConst.DEVICE_INFORMATION_RESPONSE.value:
+          if (!this.processResponse(message)){
+            //On vérifie que l'equipement existe bien sinon on le créer
+            var device = this.findDeviceByMac(message.Data.mac);
+            if (device) device._updateInformation(message.Data);
+            else this.addCircle(message.Data.mac);
+          }
+          break;
+        case PlugwiseMessageConst.DEVICE_CALIBRATION_RESPONSE.value:
+          if (!this.processResponse(message)){
+            //On vérifie que l'equipement existe bien sinon on le créer
+            var device = this.findDeviceByMac(message.Data.mac);
+            if (device) device._updateCalibration(message.Data);
+            else this.addCircle(message.Data.mac);
+          }
+          break;
+        case PlugwiseMessageConst.WAKEUP_ANNONCE.value:
           var device = this.findDeviceByMac(message.Data.mac);
-          if (device) device._updatePowerInfo(message.Data);
-          else this.addCircle(message.Data.mac);
-        }
-        break;
-      case PlugwiseMessageConst.DEVICE_ROLECALL_RESPONSE.value:
-        if (!this.processResponse(message)){
-          this.getCirclePlus()._roleCall(message.Data);
-        }
-        break;
-      case PlugwiseMessageConst.DEVICE_INFORMATION_RESPONSE.value:
-        if (!this.processResponse(message)){
-          //On vérifie que l'equipement existe bien sinon on le créer
+          //if (!device) this.addCircle(message.Data.mac);
+          break;
+        case PlugwiseMessageConst.SENSE_REPORT_RESPONSE.value:
           var device = this.findDeviceByMac(message.Data.mac);
-          if (device) device._updateInformation(message.Data);
-          else this.addCircle(message.Data.mac);
-        }
-        break;
-      case PlugwiseMessageConst.DEVICE_CALIBRATION_RESPONSE.value:
-        if (!this.processResponse(message)){
-          //On vérifie que l'equipement existe bien sinon on le créer
-          var device = this.findDeviceByMac(message.Data.mac);
-          if (device) device._updateCalibration(message.Data);
-          else this.addCircle(message.Data.mac);
-        }
-        break;
-      case PlugwiseMessageConst.WAKEUP_ANNONCE.value:
-        var device = this.findDeviceByMac(message.Data.mac);
-        //if (!device) this.addCircle(message.Data.mac);
-        break;
-      case PlugwiseMessageConst.SENSE_REPORT_RESPONSE.value:
-        var device = this.findDeviceByMac(message.Data.mac);
-        if (!device) device = this.addSense(message.Data.mac);
-        device._updateSenseInfo(message.Data);
-        break;
-      default:
-        Logger.log('Le code de retour ' + message.Type + ' n\'est pas géré : ' + data +'. Contacter le developpeur', LogType.WARNING);
-        break;
+          if (!device) device = this.addSense(message.Data.mac);
+          device._updateSenseInfo(message.Data);
+          break;
+        default:
+          Logger.log('Le code de retour ' + message.Type + ' n\'est pas géré : ' + data +'. Contacter le developpeur', LogType.WARNING);
+          break;
+      }
+    } catch (e) {
+      Logger.log("Erreur lors du traitement du message : " + data + ', err : ' + e, LogType.ERROR);
     }
   }
 
