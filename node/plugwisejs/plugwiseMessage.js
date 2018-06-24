@@ -4,6 +4,38 @@ var crc = require('crc');
 var LogType = require('../logger/logger.js').logType;
 var Logger = require('../logger/logger.js').getInstance();
 
+var PlugwiseDeviceType = {
+  STICK:{value:0,name:"Stick"},
+  CIRCLEPLUS:{value:1,name:"CirclePlus"},
+  CIRCLE:{value:2,name:"Circle"},
+  SWITCH:{value:3,name:"Switch"},
+  SENSE:{value:5,name:"Sense"},
+  SCAN:{value:6,name:"Scan"},
+  STEALTH:{value:9,name:"Stealth"},
+  UNDEFINDED:{value:999,name:"Unknow"},
+  getType:function(type){
+    switch (type)
+    {
+      case 0:
+        return PlugwiseDeviceType.STICK;
+      case 1:
+        return PlugwiseDeviceType.CIRCLEPLUS;
+      case 2:
+        return PlugwiseDeviceType.CIRCLE;
+      case 3:
+        return PlugwiseDeviceType.SWITCH;
+      case 5:
+        return PlugwiseDeviceType.SENSE;
+      case 6:
+        return PlugwiseDeviceType.SCAN;
+      case 9:
+        return PlugwiseDeviceType.STEALTH;
+      default:
+        return PlugwiseDeviceType.UNDEFINDED;
+    }
+  }
+}
+
 var PlugwiseMessageConst = {
   //Pass Full message
   parser:function(data) {
@@ -21,7 +53,21 @@ var PlugwiseMessageConst = {
     return out
   },
   // Pass messageData
-  ACKNOWLEDGEMENT:{ //Pass message data without Type
+  ACKNOWLEDGEMENT_V2:{ //Pass message data without Type
+    value:'0100',regEx:'^(\\w{16})(\\w{4})$', // Mac, SubType
+    parser:function(data) {
+      var regularExpression = new RegExp('^(\\w{16})(\\w{4})$');
+      var parsed = data.match(regularExpression);
+      var out = {};
+      if (parsed) {
+        out.mac = parsed[1];
+        out.subtype = parsed[2];
+      }
+      Logger.log("InsideParser - ACKNOWLEDGEMENT: " + JSON.stringify(out), LogType.DEBUG);
+      return out
+    }
+  },
+  ACKNOWLEDGEMENT_V1:{ //Pass message data without Type
     value:'0000',regEx:'^(\\w{4})(\\w{16})?$', //SubType, Mac,
     parser:function(data) {
       var regularExpression = new RegExp('^(\\w{4})(\\w{16})?$');
@@ -33,7 +79,10 @@ var PlugwiseMessageConst = {
       }
       Logger.log("InsideParser - ACKNOWLEDGEMENT: " + JSON.stringify(out), LogType.DEBUG);
       return out
-    },
+    }
+  },
+  ACKNOWLEDGEMENT_SUBTYPE:
+  {
     NOTEXTENDED:{value:'0000'},
     SUCCESS:{value:'00C1'},
     ERROR:{value:'00C2'},
@@ -45,6 +94,27 @@ var PlugwiseMessageConst = {
     OFF:{value:'00DE'},
     TIMEOUT:{value:'00E1'},
     UNKNOWN:{value:'03E7'}
+    /*
+            SENSE_INTERVAL_SET_ACK(179),
+            SENSE_INTERVAL_SET_NACK(180),
+            SENSE_BOUNDARIES_SET_ACK(181),
+            SENSE_BOUNDARIES_SET_NACK(182),
+            LIGHT_CALIBRATION_ACK(189),
+            SCAN_PARAMETERS_SET_ACK(190),
+            SCAN_PARAMETERS_SET_NACK(191),
+
+            CIRCLE_PLUS(221),
+            CLOCK_SET_ACK(215),
+            POWER_CALIBRATION_ACK(218),
+            REAL_TIME_CLOCK_SET_ACK(223),
+            ON_OFF_NACK(226),
+            REAL_TIME_CLOCK_SET_NACK(231),
+            SLEEP_SET_ACK(246),
+            POWER_LOG_INTERVAL_SET_ACK(248),
+            UNKNOWN(999);
+
+      */
+
     /*
     elsif ( $2 eq "00F9" ) {	                   $xplmsg{text}="Clear group MAC-Table"      ; return \%xplmsg;}
   elsif ( $2 eq "00FA" ) {	                   $xplmsg{text}="Fill Switch-schedule"      ; return \%xplmsg;}
@@ -207,7 +277,7 @@ var PlugwiseMessageConst = {
     return device.getMac()+data.toString(16).pad(2).toUpperCase();
   }},
   DEVICE_ROLECALL_REQUEST:{value:'0018', format: function(device,data) {
-    return device.getMac()+data.toString(16).pad(2).toUpperCase();
+    return device.getCirclePlus().getMac()+data.toString(16).pad(2).toUpperCase();
   }},
   DEVICE_ROLECALL_RESPONSE:{value:'0019', regEx:'(\\w{16})(\\w{16})(\\w{2})',
   parser:function(data) {
@@ -216,7 +286,7 @@ var PlugwiseMessageConst = {
     var out = {};
     if (parsed) {
       out.circleplusMac = parsed[1];
-      out.circleMac = parsed[2];
+      out.deviceMac = parsed[2];
       out.nodeID = parsed[3];
     }
     Logger.log("InsideParser - DEVICE_ROLECALL_RESPONSE: " + JSON.stringify(out), LogType.DEBUG);
@@ -270,14 +340,14 @@ var PlugwiseMessageConst = {
     var out = {};
     if (parsed) {
       out.circleplusMac = parsed[1];
-      out.circleMac = parsed[2];
+      out.deviceMac = parsed[2];
       out.status = parsed[3];
     }
     Logger.log("InsideParser - REMOVE_NODE_REPLY: " + JSON.stringify(out), LogType.DEBUG);
     return out
   }},
   DEVICE_INFORMATION_REQUEST:{value:'0023', format: function(device,data) {
-    return device.getMac();
+    return data;
   }},
   DEVICE_INFORMATION_RESPONSE:{value:'0024', regEx:'(\\w{16})(\\w{2})(\\w{2})(\\w{4})(\\w{8})(\\w{2})(\\w{2})(\\w{12})(\\w{8})(\\w{2})',
   parser:function(data) {
@@ -297,7 +367,7 @@ var PlugwiseMessageConst = {
       out.hertz = parsed[7] == '85' ? '50':'60';
       out.hardwareVersion = parsed[8];
       out.firmwareVersion = parsed[9];
-      out.unkwon = parsed[10];
+      out.deviceType = PlugwiseDeviceType.getType(parseInt(parsed[10], 16));
     }
     Logger.log("InsideParser - DEVICE_INFORMATION_RESPONSE: " + JSON.stringify(out), LogType.DEBUG);
     return out
@@ -870,3 +940,4 @@ class PlugwiseIncomingMessage {
 exports.PlugwiseIncomingMessage = PlugwiseIncomingMessage;
 exports.PlugwiseOutgoingMessage = PlugwiseOutgoingMessage;
 exports.PlugwiseMessageConst = PlugwiseMessageConst;
+exports.PlugwiseDeviceType = PlugwiseDeviceType;

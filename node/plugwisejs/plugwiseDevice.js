@@ -5,16 +5,9 @@ var Logger = require('../logger/logger.js').getInstance();
 var PlugwiseIncomingMessage = require ('./plugwiseMessage.js').PlugwiseIncomingMessage;
 var PlugwiseOutgoingMessage = require ('./plugwiseMessage.js').PlugwiseOutgoingMessage;
 var PlugwiseMessageConst = require ('./plugwiseMessage.js').PlugwiseMessageConst;
+var PlugwiseDeviceType = require ('./plugwiseMessage.js').PlugwiseDeviceType;
 var EventEmitter = require('events');
 var SerialPort = require('serialport');
-
-var deviceType = {
-  STICK:{name:"Stick"},
-  CIRCLE:{name:"Circle"},
-  CIRCLEPLUS:{name:"CirclePlus"},
-  SENSE:{name:"Sense"},
-  UNDEFINDED:{name:"Unknow"}
-}
 
 var PULSE_FACTOR = 2.1324759;
 var TIMEOUT = 3500;
@@ -29,7 +22,7 @@ class PlugwiseDevice extends EventEmitter {
   }
 
   getType(){
-    return deviceType.UNDEFINDED;
+    return PlugwiseDeviceType.UNDEFINDED;
   }
 
   getMac() {
@@ -48,49 +41,23 @@ class PlugwiseDevice extends EventEmitter {
 }
 
 class PlugwiseSense extends PlugwiseDevice {
-  constructor(mac, plugwiseStick){
-    super(mac);
+  constructor(deviceData, plugwiseStick){
+    super(deviceData.mac);
     this._stick = plugwiseStick;
-    this.init(() => {
-      Logger.log("Initialisation de l'equipement " + this.getType().name + " avec adresse MAC : " + this._mac + " terminée avec succès.");
-    });
+    this.updateInformation(deviceData);
+    Logger.log("Initialisation de l'equipement " + this.getType().name + " avec adresse MAC : " + this._mac + " terminée avec succès.");
   }
 
   getType() {
-    return deviceType.SENSE;
+    return PlugwiseDeviceType.SENSE;
   }
 
-  init(callback)
-  {
-    //GetInformation
-    this.updateInformation(() => {
-      if (callback) callback();
-    });
-  }
-
-  _updateInformation(data)
+  updateInformation(data)
   {
     this._firmwareVersion = data.firmwareVersion;
     this._hardwareVersion = data.hardwareVersion;
     this._date =  data.date;
-    //this._hertz = data.hertz;
     this._stick.emit('senseUpdateInfo', this);
-  }
-
-  updateInformation(callback)
-  {
-    //Ces informations sont elles dispo pour le sense???
-    /*this._stick.sendMessage (new PlugwiseOutgoingMessage(this,PlugwiseMessageConst.DEVICE_INFORMATION_REQUEST,'',(device,messageData) => {
-      device._updateInformation(messageData);
-      if (callback) callback();
-    }));*/
-    var data = {};
-    data.firmwareVersion = 'Not Implemented';
-    data.hardwareVersion = 'Not Implemented';
-    data.date = 'Not Implemented';
-    this._updateInformation(data);
-
-    if (callback) callback();
   }
 
   _updateSenseInfo(data)
@@ -156,7 +123,7 @@ class PlugwiseStick extends PlugwiseDevice {
 
   updateInformation(callback)
   {
-    this.sendMessage(new PlugwiseOutgoingMessage(this,PlugwiseMessageConst.DEVICE_INFORMATION_REQUEST,'',(device,messageData) => {
+    this.sendMessage(new PlugwiseOutgoingMessage(this,PlugwiseMessageConst.DEVICE_INFORMATION_REQUEST,this.getMac(),(device,messageData) => {
       device._updateInformation(messageData);
       if (callback) callback();
     }));
@@ -207,9 +174,10 @@ class PlugwiseStick extends PlugwiseDevice {
       //Logger.log("Analyse du code : " + message.Type, LogType.DEBUG);
       switch (message.Type)
       {
-        case PlugwiseMessageConst.ACKNOWLEDGEMENT.value:
+        case PlugwiseMessageConst.ACKNOWLEDGEMENT_V1.value:
+        case PlugwiseMessageConst.ACKNOWLEDGEMENT_V2.value:
           //Logger.log("Analyse du sous-code : " + message.Data.subtype, LogType.DEBUG);
-          var acknowledgementMessageConst = PlugwiseMessageConst.ACKNOWLEDGEMENT;
+          var acknowledgementMessageConst = PlugwiseMessageConst.ACKNOWLEDGEMENT_SUBTYPE;
           switch (message.Data.subtype)
           {
             case acknowledgementMessageConst.SUCCESS.value:
@@ -251,7 +219,9 @@ class PlugwiseStick extends PlugwiseDevice {
                 //On vérifie que l'equipement existe bien sinon on le créer
                 var device = this.findDeviceByMac(message.Data.mac);
                 if (device) device._updateState(true);
-                else this.addCircle(message.Data.mac);
+                else this._processAddingDevice(message.Data.mac,(createdDevice) => {
+                  createdDevice._updateState(true);
+                });
               }
               break;
             case acknowledgementMessageConst.OFF.value:
@@ -259,7 +229,9 @@ class PlugwiseStick extends PlugwiseDevice {
               //On vérifie que l'equipement existe bien sinon on le créer
               var device = this.findDeviceByMac(message.Data.mac);
               if (device) device._updateState(false);
-              else this.addCircle(message.Data.mac);
+              else this._processAddingDevice(message.Data.mac,(createdDevice) => {
+                createdDevice._updateState(false);
+              });
             }
             case acknowledgementMessageConst.CLOCKSET.value:
               this.processResponse(message);
@@ -316,7 +288,7 @@ class PlugwiseStick extends PlugwiseDevice {
           }
           break;
         case PlugwiseMessageConst.NODE_ADDED_TO_NETWORK.value:
-          if (message.Data.mac != this.getMac()) this.addCircle(message.Data.mac);
+          if (message.Data.mac != this.getMac()) this._processAddingDevice(message.Data.mac);
           break;
         case PlugwiseMessageConst.REMOVE_NODE_REPLY.value:
           if (!this.processResponse(message)){
@@ -333,12 +305,14 @@ class PlugwiseStick extends PlugwiseDevice {
             //On vérifie que l'equipement existe bien sinon on le créer
             var device = this.findDeviceByMac(message.Data.mac);
             if (device) device._updatePowerInfo(message.Data);
-            else this.addCircle(message.Data.mac);
+            else this._processAddingDevice(message.Data.mac,(createdDevice) => {
+              createdDevice._updatePowerInfo(message.Data);
+            });
           }
           break;
         case PlugwiseMessageConst.DEVICE_ROLECALL_RESPONSE.value:
           if (!this.processResponse(message)){
-            this.getCirclePlus()._roleCall(message.Data);
+            this._processAddingDevice(message.Data.mac);
           }
           break;
         case PlugwiseMessageConst.DEVICE_INFORMATION_RESPONSE.value:
@@ -346,7 +320,7 @@ class PlugwiseStick extends PlugwiseDevice {
             //On vérifie que l'equipement existe bien sinon on le créer
             var device = this.findDeviceByMac(message.Data.mac);
             if (device) device._updateInformation(message.Data);
-            else this.addCircle(message.Data.mac);
+            else this._processAddingDevice(message.Data.mac);
           }
           break;
         case PlugwiseMessageConst.DEVICE_CALIBRATION_RESPONSE.value:
@@ -354,17 +328,21 @@ class PlugwiseStick extends PlugwiseDevice {
             //On vérifie que l'equipement existe bien sinon on le créer
             var device = this.findDeviceByMac(message.Data.mac);
             if (device) device._updateCalibration(message.Data);
-            else this.addCircle(message.Data.mac);
+            else this._processAddingDevice(message.Data.mac,(createdDevice) => {
+              createdDevice._updateCalibration(message.Data);
+            });
           }
           break;
-        case PlugwiseMessageConst.WAKEUP_ANNONCE.value:
+        case PlugwiseMessageConst.WAKEUP_ANNONCE_RESPONSE.value:
           var device = this.findDeviceByMac(message.Data.mac);
-          //if (!device) this.addCircle(message.Data.mac);
+          if (!device) this._processAddingDevice(message.Data.mac);
           break;
         case PlugwiseMessageConst.SENSE_REPORT_RESPONSE.value:
           var device = this.findDeviceByMac(message.Data.mac);
-          if (!device) device = this.addSense(message.Data.mac);
-          device._updateSenseInfo(message.Data);
+          if (device) device._updateSenseInfo(message.Data);
+          else this._processAddingDevice(message.Data.mac,(createdDevice) => {
+            createdDevice._updateSenseInfo(message.Data);
+          });
           break;
         default:
           Logger.log('Le code de retour ' + message.Type + ' n\'est pas géré : ' + data +'. Contacter le developpeur', LogType.WARNING);
@@ -376,7 +354,7 @@ class PlugwiseStick extends PlugwiseDevice {
   }
 
   getType(){
-    return deviceType.STICK;
+    return PlugwiseDeviceType.STICK;
   }
 
   init(callback){
@@ -386,8 +364,7 @@ class PlugwiseStick extends PlugwiseDevice {
       device._mac=messageData.stickMac;
       device.updateInformation();
       if (messageData.online){
-        if (!device._deviceList[messageData.circleplusMac])
-          device._deviceList[messageData.circleplusMac] = new PlugwiseCirclePlus(messageData.circleplusMac,device);
+        _processRoleCallResponse(messageData.circleplusMac)
       }
       else {
         //ToDo, Manage pairing of Circle+
@@ -471,29 +448,24 @@ class PlugwiseStick extends PlugwiseDevice {
     },100);
   }
 
-  addCircle(mac)
+  addDevice(deviceData)
   {
-    if (!this._deviceList[mac])
-      this._deviceList[mac] = new PlugwiseCircle(mac,this);
-    else this._deviceList[mac].updateInformation();
-    return this._deviceList[mac];
+    if (!this._deviceList[deviceData.mac])
+    {
+      if (deviceData.type == PlugwiseDeviceType.CIRCLEPLUS) this._deviceList[deviceData.mac] = new PlugwiseCirclePlus(deviceData,this);
+      else if (deviceData.type == PlugwiseDeviceType.CIRCLE) this._deviceList[deviceData.mac] = new PlugwiseCircle(deviceData,this);
+      else if (deviceData.type == PlugwiseDeviceType.SENSE) this._deviceList[deviceData.mac] = new PlugwiseSense(deviceData,this);
+    }
+    this._deviceList[deviceData.mac].updateInformation(deviceData);
+    return this._deviceList[deviceData.mac];
   }
 
-  addSense(mac)
-  {
-    if (!this._deviceList[mac])
-      this._deviceList[mac] = new PlugwiseSense(mac,this);
-    else this._deviceList[mac].updateInformation();
-    return this._deviceList[mac];
-  }
-
-  removeCircle(mac)
-  {
+  removeDevice(mac,callback){
     if (this._deviceList[mac]){
-      this.getCirclePlus().removeCircle(mac,() => {
-        delete this._deviceList[mac];
-        this.emit('circleRemove',mac);
-      });
+      this.sendMessage (new PlugwiseOutgoingMessage(this,PlugwiseMessageConst.REMOVE_NODE_REQUEST,mac,(device,messageData) => {
+        delete this._deviceList[messageData.deviceMac];
+        this.emit('circleRemove',messageData.deviceMac);
+      }));
     }
     else this.emit('circleRemove',mac);
   }
@@ -501,40 +473,60 @@ class PlugwiseStick extends PlugwiseDevice {
   getCirclePlus()
   {
     for(var key in this._deviceList) {
-      if (this._deviceList[key].getType() == deviceType.CIRCLEPLUS) return this._deviceList[key];
+      if (this._deviceList[key].getType() == PlugwiseDeviceType.CIRCLEPLUS) return this._deviceList[key];
     }
   }
 
   synchronize()
   {
-    var circlePlus = this.getCirclePlus();
-    circlePlus.updateInformation();
-    circlePlus.searchCircles();
+    /*var circlePlus = this.getCirclePlus();
+    circlePlus.updateInformation();*/
+    _searchDevices();
+  }
+
+  _searchDevices()
+  {
+    Logger.log("Lancement de la recherche des équipements Plugwise");
+    this.searchDevice(0);
+  }
+
+  _searchDevice(nodeID)
+  {
+    this._roleCall(nodeID, () => {
+      if (nodeID == 63) Logger.log("Fin de recherche des équipements Plugwise");
+      else this._searchDevice(nodeID+1);
+    });
+  }
+
+  _processAddingDevice(mac, callback)
+  {
+    if (mac != 'FFFFFFFFFFFFFFFF')
+    {
+      this.sendMessage (new PlugwiseOutgoingMessage(this,PlugwiseMessageConst.DEVICE_INFORMATION_REQUEST,mac,(stick,messageData) => {
+        var device = stick.addDevice(messageData);
+        if (callback) callback(device);
+      }));
+    }
+  }
+
+  _roleCall(nodeId,callback){
+    this.sendMessage (new PlugwiseOutgoingMessage(this,PlugwiseMessageConst.DEVICE_ROLECALL_REQUEST,nodeId,(device,messageData) => {
+      device._processAddingDevice(messageData.deviceMac);
+      if (callback) callback();
+    }));
   }
 }
 
 class PlugwiseCircle extends PlugwiseDevice {
-  constructor(mac, plugwiseStick){
-    super(mac);
+  constructor(deviceData, plugwiseStick){
+    super(deviceData.mac);
     this._stick = plugwiseStick;
-    this.init(() => {
-      Logger.log("Initialisation de l'equipement " + this.getType().name + " avec adresse MAC : " + this._mac + " terminée avec succès.");
-    });
+    this.updateInformation(deviceData);
+    Logger.log("Initialisation de l'equipement " + this.getType().name + " avec adresse MAC : " + this._mac + " terminée avec succès.");
   }
 
   getType() {
-    return deviceType.CIRCLE;
-  }
-
-  init(callback)
-  {
-    //GetInformation
-    this.updateInformation(() => {
-      //Calibrage
-      //Afin de limiter le nombre de message, on ne fait la calibration que lorsque c'est nécessaire
-      //this.calibration();
-      if (callback) callback();
-    });
+    return PlugwiseDeviceType.CIRCLE;
   }
 
   isOn()
@@ -563,7 +555,7 @@ class PlugwiseCircle extends PlugwiseDevice {
     return this._hertz;
   }
 
-  _updateInformation(data)
+  updateInformation(data)
   {
     this._firmwareVersion = data.firmwareVersion;
     this._hardwareVersion = data.hardwareVersion;
@@ -573,13 +565,13 @@ class PlugwiseCircle extends PlugwiseDevice {
     this._stick.emit('circleUpdateInfo', this);
   }
 
-  updateInformation(callback)
+  /*updateInformation(callback)
   {
-    this._stick.sendMessage (new PlugwiseOutgoingMessage(this,PlugwiseMessageConst.DEVICE_INFORMATION_REQUEST,'',(device,messageData) => {
+    this._stick.sendMessage (new PlugwiseOutgoingMessage(this,PlugwiseMessageConst.DEVICE_INFORMATION_REQUEST,this.getMac(),(device,messageData) => {
       device._updateInformation(messageData);
       if (callback) callback();
     }));
-  }
+  }*/
 
   _getCorrectedPulses(pulses)
   {
@@ -677,46 +669,11 @@ class PlugwiseCircle extends PlugwiseDevice {
 }
 
 class PlugwiseCirclePlus extends PlugwiseCircle {
-  constructor(mac, plugwiseStick){
-    super(mac, plugwiseStick);
-  }
-
-  init(callback)
-  {
-    super.init(() => {
-      //setclock
-      this.setClock(() => {
-        Logger.log("Mise a jour du circle plug correct");
-      });
-      if (callback) callback();
-      this.searchCircles();
+  constructor(deviceData, plugwiseStick){
+    super(deviceData, plugwiseStick);
+    this.setClock(() => {
+      Logger.log("Mise a jour clock du circlePlus plug correct");
     });
-  }
-
-  searchCircles()
-  {
-    Logger.log("Lancement de la recherche des équipements Circle");
-    this.searchCircle(0);
-  }
-
-  searchCircle(nodeID)
-  {
-    this.roleCall(nodeID, () => {
-      if (nodeID == 63) Logger.log("Fin de recherche des équipements Circle");
-      else this.searchCircle(nodeID+1);
-    });
-  }
-
-  _roleCall(data)
-  {
-    if (data.circleMac != 'FFFFFFFFFFFFFFFF') this._stick.addCircle(data.circleMac);
-  }
-
-  roleCall(nodeId,callback){
-    this._stick.sendMessage (new PlugwiseOutgoingMessage(this,PlugwiseMessageConst.DEVICE_ROLECALL_REQUEST,nodeId,(device,messageData) => {
-      device._roleCall(messageData);
-      if (callback) callback();
-    }));
   }
 
   setClock(callback)
@@ -726,14 +683,8 @@ class PlugwiseCirclePlus extends PlugwiseCircle {
     }));
   }
 
-  removeCircle(mac,callback){
-    this._stick.sendMessage (new PlugwiseOutgoingMessage(this,PlugwiseMessageConst.REMOVE_NODE_REQUEST,mac,(device,messageData) => {
-      if (callback) callback();
-    }));
-  }
-
   getType() {
-    return deviceType.CIRCLEPLUS;
+    return PlugwiseDeviceType.CIRCLEPLUS;
   }
 }
 
