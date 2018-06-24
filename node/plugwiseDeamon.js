@@ -203,7 +203,7 @@ var sendToPlugwise = function (payload){
   }
   obj = plugwiseStick.findDeviceByMac(data.macAddress)
   if (obj == null) {
-    Logger.log("Impossible de trouver la prise " + data.macAddress + " sur le reseau plugwise", LogType.ERROR);
+    Logger.log("Impossible de trouver le device " + data.macAddress + " sur le reseau plugwise", LogType.ERROR);
     return;
   }
   switch (data.command){
@@ -217,7 +217,7 @@ var sendToPlugwise = function (payload){
       break;
     case 'INFO':
       Logger.log("Ordre UpdateInfo sur prise " + data.macAddress + " envoyé", LogType.INFO);
-      obj.updateInformation();
+      plugwiseStick.updateDeviceInformation(data.macAddress);
       break;
     case 'CALIBRATION':
       Logger.log("Ordre UpdateCalibration sur prise " + data.macAddress + " envoyé", LogType.INFO);
