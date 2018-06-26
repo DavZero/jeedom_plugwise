@@ -216,8 +216,8 @@ var sendToPlugwise = function (payload){
       obj.powerOff();
       break;
     case 'INFO':
-      Logger.log("Ordre UpdateInfo sur prise " + data.macAddress + " envoyé", LogType.INFO);
-      plugwiseStick.updateDeviceInformation(data.macAddress);
+      Logger.log("Ordre UpdateInfo sur device " + data.macAddress + " envoyé", LogType.INFO);
+      device.updateInformation();
       break;
     case 'CALIBRATION':
       Logger.log("Ordre UpdateCalibration sur prise " + data.macAddress + " envoyé", LogType.INFO);
