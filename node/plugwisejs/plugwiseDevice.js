@@ -457,11 +457,11 @@ class PlugwiseStick extends PlugwiseDevice {
   {
     if (!this._deviceList[deviceData.mac])
     {
-      if (deviceData.type == PlugwiseDeviceType.CIRCLEPLUS) this._deviceList[deviceData.mac] = new PlugwiseCirclePlus(deviceData,this);
-      else if (deviceData.type == PlugwiseDeviceType.CIRCLE) this._deviceList[deviceData.mac] = new PlugwiseCircle(deviceData,this);
-      else if (deviceData.type == PlugwiseDeviceType.SENSE) this._deviceList[deviceData.mac] = new PlugwiseSense(deviceData,this);
+      if (deviceData.type.value == PlugwiseDeviceType.CIRCLEPLUS.value) this._deviceList[deviceData.mac] = new PlugwiseCirclePlus(deviceData,this);
+      else if (deviceData.type.value == PlugwiseDeviceType.CIRCLE.value) this._deviceList[deviceData.mac] = new PlugwiseCircle(deviceData,this);
+      else if (deviceData.type.value == PlugwiseDeviceType.SENSE.value) this._deviceList[deviceData.mac] = new PlugwiseSense(deviceData,this);
     }
-    this._deviceList[deviceData.mac]._updateInformation(deviceData);
+    if (this._deviceList[deviceData.mac]) this._deviceList[deviceData.mac]._updateInformation(deviceData);
     return this._deviceList[deviceData.mac];
   }
 
