@@ -367,7 +367,7 @@ var PlugwiseMessageConst = {
       out.hertz = parsed[7] == '85' ? '50':'60';
       out.hardwareVersion = parsed[8];
       out.firmwareVersion = parsed[9];
-      out.deviceType = PlugwiseDeviceType.getType(parseInt(parsed[10], 16));
+      out.type = PlugwiseDeviceType.getType(parseInt(parsed[10], 16));
     }
     Logger.log("InsideParser - DEVICE_INFORMATION_RESPONSE: " + JSON.stringify(out), LogType.DEBUG);
     return out
