@@ -318,7 +318,7 @@ class PlugwiseStick extends PlugwiseDevice {
           break;
         case PlugwiseMessageConst.DEVICE_ROLECALL_RESPONSE.value:
           if (!this.processResponse(message)){
-            this._addDevice(message.Data.mac);
+            this._addDevice(message.Data.deviceMac);
           }
           break;
         case PlugwiseMessageConst.DEVICE_INFORMATION_RESPONSE.value:
@@ -519,7 +519,7 @@ class PlugwiseStick extends PlugwiseDevice {
 
   _roleCall(nodeId,callback){
     this.sendMessage (new PlugwiseOutgoingMessage(this,PlugwiseMessageConst.DEVICE_ROLECALL_REQUEST,nodeId,(stick,messageData) => {
-      if (mac != 'FFFFFFFFFFFFFFFF')
+      if (messageData.deviceMac != 'FFFFFFFFFFFFFFFF')
       {
         stick._addDevice(messageData.deviceMac);
       }
