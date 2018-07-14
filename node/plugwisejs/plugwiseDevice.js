@@ -12,6 +12,13 @@ var SerialPort = require('serialport');
 var PULSE_FACTOR = 2.1324759;
 var TIMEOUT = 3500;
 var POWER_INTERVAL = 30000;
+var INVALID_WATT_THRESHOLD = 10000;
+
+var customRound = function(value,n)
+{
+  return Math.round(value*Math.pow(10,n))/Math.pow(10,n);
+}
+
 
 class PlugwiseDevice extends EventEmitter {
   constructor(mac)
@@ -68,8 +75,8 @@ class PlugwiseSense extends PlugwiseDevice {
 
   _updateSenseInfo(data)
   {
-    this._humidity = data.humidity;
-    this._temperature = data.temperature;
+    this._humidity = customRound(data.humidity,2);
+    this._temperature = customRound(data.temperature,2);
     this._stick.emit('senseUpdateSenseInfo', this);
   }
 
@@ -96,19 +103,14 @@ class PlugwiseStick extends PlugwiseDevice {
     this._acknowledgedQueue.Count = 0;
     this._currentMessage = {};
     this._inclusionMode = false;
-    //this._parser = new SerialPort.parsers.Readline({delimiter: '\n'});
-    //this._parser.on('data', this.processData.bind(this)); //bind force function to be call with this instance
 
     var parser = new SerialPort.parsers.Readline({delimiter: '\n'});
     parser.on('data', this.processData.bind(this));
 
     // connect to the serial port of the 'stick'
     this._sp = new SerialPort(port, { baudRate: 115200 });
-    //if ( this._sp.settings.baudRate ) this._sp.settings.baudRate=115200;
-    //else this._sp.settings.baudrate=115200;
 
     this._sp.pipe(parser);
-    //this._sp.on('data', this.processData.bind(this)); //bind force function to be call with this instance
 
     this._sp.on('open', () => {
         this._opened = true;
@@ -459,6 +461,7 @@ class PlugwiseStick extends PlugwiseDevice {
     {
       if (deviceData.type.value == PlugwiseDeviceType.CIRCLEPLUS.value) this._deviceList[deviceData.mac] = new PlugwiseCirclePlus(deviceData,this);
       else if (deviceData.type.value == PlugwiseDeviceType.CIRCLE.value) this._deviceList[deviceData.mac] = new PlugwiseCircle(deviceData,this);
+      else if (deviceData.type.value == PlugwiseDeviceType.STEALTH.value) this._deviceList[deviceData.mac] = new PlugwiseStealth(deviceData,this);
       else if (deviceData.type.value == PlugwiseDeviceType.SENSE.value) this._deviceList[deviceData.mac] = new PlugwiseSense(deviceData,this);
     }
     if (this._deviceList[deviceData.mac]) this._deviceList[deviceData.mac]._updateInformation(deviceData);
@@ -528,7 +531,7 @@ class PlugwiseStick extends PlugwiseDevice {
   }
 }
 
-class PlugwiseCircle extends PlugwiseDevice {
+class PlugwiseRelay extends PlugwiseDevice {
   constructor(deviceData, plugwiseStick){
     super(deviceData.mac);
     this._stick = plugwiseStick;
@@ -537,7 +540,7 @@ class PlugwiseCircle extends PlugwiseDevice {
   }
 
   getType() {
-    return PlugwiseDeviceType.CIRCLE;
+    return PlugwiseDeviceType.UNDEFINDED;
   }
 
   isOn()
@@ -599,10 +602,18 @@ class PlugwiseCircle extends PlugwiseDevice {
 
   _updatePowerInfo(data)
   {
-    this._power1s = this._pulsesToWatt(this._getCorrectedPulses(data.pulsesOneSecond));
-    this._power8s = this._pulsesToWatt(this._getCorrectedPulses(data.pulsesEightSeconds))/8;
-    this._consumptionThisHour = this._pulsesTokWh(this._getCorrectedPulses(data.pulsesConsoHour));
-    this._stick.emit('circleUpdatePowerInfo', this);
+    var power1s = this._pulsesToWatt(this._getCorrectedPulses(data.pulsesOneSecond));
+    if (power1s < INVALID_WATT_THRESHOLD)
+    {
+      this._power1s = customRound(power1s,2);
+      this._power8s = customRound(this._pulsesToWatt(this._getCorrectedPulses(data.pulsesEightSeconds))/8,2);
+      this._consumptionThisHour = customRound(this._pulsesTokWh(this._getCorrectedPulses(data.pulsesConsoHour)),6);
+      this._stick.emit('circleUpdatePowerInfo', this);
+    }
+    else
+    {
+      Logger.log("Réception d'une consommation étrange pour " + this.getType().name + " avec adresse MAC : " + this._mac + ". message ignoré : " + JSON.stringify(data.pulsesEightSeconds), LogType.WARNING);
+    }
   }
 
   updatePowerInfo(callback)
@@ -673,6 +684,26 @@ class PlugwiseCircle extends PlugwiseDevice {
   {
     if (this._activated) this.powerOff(callback);
     else this.powerOn(callback);
+  }
+}
+
+class PlugwiseCircle extends PlugwiseRelay {
+  constructor(deviceData, plugwiseStick){
+    super(deviceData, plugwiseStick);
+  }
+
+  getType() {
+    return PlugwiseDeviceType.CIRCLE;
+  }
+}
+
+class PlugwiseStealth extends PlugwiseRelay {
+  constructor(deviceData, plugwiseStick){
+    super(deviceData, plugwiseStick);
+  }
+
+  getType() {
+    return PlugwiseDeviceType.STEALTH;
   }
 }
 
