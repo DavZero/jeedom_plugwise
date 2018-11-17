@@ -360,7 +360,7 @@ class plugwise extends eqLogic {
   private function addCmds()
 	{
 		try {
-      if ($this->getConfiguration('type') == 'Circle' || $this->getConfiguration('type') == 'CirclePlus')
+      if ($this->getConfiguration('type') == 'Circle' || $this->getConfiguration('type') == 'CirclePlus' || $this->getConfiguration('type') == 'Stealth')
       {
         //Etat
   			$cmd = $this->getCmd(null, 'state');

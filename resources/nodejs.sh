@@ -62,7 +62,6 @@ else
 fi
 arch=`arch`;
 
-testVer=`php -r "echo version_compare('${actual}','v${minVer}','>=');"`
 if [ $actual -ge 8 ]
 then
   echo "Ok, version suffisante"
