@@ -342,6 +342,12 @@ class PlugwiseStick extends PlugwiseDevice {
           var device = this.findDeviceByMac(message.Data.mac);
           if (!device) this._addDevice(message.Data.mac);
           break;
+        case PlugwiseMessageConst.REALTIMECLOCK_GET_RESPONSE.value:
+          this.processResponse(message);
+          break;
+        case PlugwiseMessageConst.CLOCK_GET_RESPONSE.value:
+          this.processResponse(message);
+          break;
         case PlugwiseMessageConst.SENSE_REPORT_RESPONSE.value:
           var device = this.findDeviceByMac(message.Data.mac);
           if (device) device._updateSenseInfo(message.Data);
@@ -386,6 +392,26 @@ class PlugwiseStick extends PlugwiseDevice {
     }));
   }
 
+  repairNetwork()
+  {
+    this._deviceList = {};
+    this.sendMessage (new PlugwiseOutgoingMessage(this,PlugwiseMessageConst.ENABLEJOINING_REQUEST,0,(stick,messageData) => {
+      stick.updateInformation(() => {
+        stick._addDevice(messageData.mac, () => {
+          stick.sendMessage (new PlugwiseOutgoingMessage(stick.getCirclePlus(),PlugwiseMessageConst.REALTIMECLOCK_GET_REQUEST,'',(device,messageData) => {
+            stick.sendMessage (new PlugwiseOutgoingMessage(stick.getCirclePlus(),PlugwiseMessageConst.CLOCK_GET_REQUEST,'',(device,messageData) => {
+              device.updatePowerInfo(() => {
+                device.updateInformation(() => {
+                  stick._searchDevices();
+                });
+              });
+            }));
+          }));
+        });
+      });
+    }));
+  }
+
   sendInitMessage(message)
   {
     Logger.log("Ajout dans la queue du message : " + message.output(), LogType.DEBUG);
@@ -405,7 +431,7 @@ class PlugwiseStick extends PlugwiseDevice {
 
   resendMessage(message)
   {
-    if (message.getTryCount() <= 5)
+    if (message.getTryCount() <= message.getMaxTryCount())
     {
       Logger.log('L\'envoi du message ' + message.output() + ' ne s\'est pas executé correctement, code retour ' + message.getReturnStatus() +'. Tentative de renvoi numéro ' + message.getTryCount(), LogType.WARNING);
       this._sendQueue.unshift(message);

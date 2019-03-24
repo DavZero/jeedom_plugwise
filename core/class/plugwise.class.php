@@ -204,6 +204,11 @@ class plugwise extends eqLogic {
     plugwise::sendToController('STICK','SYNCHRONIZE');
   }
 
+  public static function repairNetwork()
+  {
+    plugwise::sendToController('STICK','REPAIRNETWORK');
+  }
+
   public static function removeEqLogic($id)
   {
     $eqp = eqlogic::byId($id);
@@ -290,7 +295,7 @@ class plugwise extends eqLogic {
     }
     $servicePort = config::byKey('servicePort', 'plugwise');
     if ($servicePort == '') $servicePort = 5001;
-    $url  = network::getNetworkAccess().'/core/api/jeeApi.php?api='.config::byKey('api');
+    $url  = network::getNetworkAccess('internal').'/core/api/jeeApi.php?apikey=' . jeedom::getApiKey('plugwise') ;
     plugwise::launch_svc($url, $serialPort, $servicePort);
   }
 
@@ -528,6 +533,19 @@ class plugwise extends eqLogic {
       else if ($this->getConfiguration('type') == 'Stick')
       {
         //Add command for stick
+        //updateInfo
+  			/*$cmd = $this->getCmd(null, 'RepairNetwork');
+  			if (!is_object($cmd)) {
+  				$cmd = new plugwiseCmd();
+  				$cmd->setName(__('Réparation réseau', __FILE__));
+  				$cmd->setLogicalId('RepairNetwork');
+  				$cmd->setEqLogic_id($this->getId());
+  				$cmd->setType('action');
+  				$cmd->setSubType('other');
+  				$cmd->setIsVisible(0);
+          $cmd->setConfiguration('request','REPAIRNETWORK');
+  				$cmd->save();
+  			}*/
       }
       else if ($this->getConfiguration('type') == 'Sense')
       {

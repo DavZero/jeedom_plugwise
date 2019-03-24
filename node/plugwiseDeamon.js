@@ -198,6 +198,10 @@ var sendToPlugwise = function (payload){
         Logger.log("Synchronisation des equipements");
         plugwiseStick.synchronize();
         break;
+      case 'REPAIRNETWORK':
+        Logger.log("Réparation du reseau");
+        plugwiseStick.repairNetwork();
+        break;
     }
     return;
   }

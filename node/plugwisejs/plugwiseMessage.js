@@ -223,7 +223,7 @@ var PlugwiseMessageConst = {
     return data; //00 mean rejected and 01 accepted + new Mac address receive form NODE_AVAILABLE message , ie 01 000D6F0000D3595D
   }},
   ENABLEJOINING_REQUEST:{value:'0008', format:function(device,data) { // Ou alors c'est un allow new node?
-    return data.pad(2); //00 or 01 ???
+    return data.toString(16).pad(2); //00 or 01 ???
   }},
   INITIALISE_REQUEST:{value:'000A', format:function(device,data) {
     return '';
@@ -395,20 +395,33 @@ var PlugwiseMessageConst = {
   REALTIMECLOCK_GET_REQUEST:{value:'0029', format: function(device,data) {
     return device.getMac();
   }},
-  REALTIMECLOCK_GET_RESPONSE:{value:'003A', regEx:'(\\w{16})(\\w{2})(\\w{2})(\\w{2})(\\w{2})(\\w{2})(\\w{2})(\\w{2})'},
+  REALTIMECLOCK_GET_RESPONSE:{value:'003A', regEx:'(\\w{16})(\\w{2})(\\w{2})(\\w{2})(\\w{2})(\\w{2})(\\w{2})(\\w{2})',
+  parser:function(data){
+    Logger.log("InsideParser - REALTIMECLOCK_GET_RESPONSE: " + JSON.stringify(data), LogType.DEBUG);
+    return {};
+  }},
   CLOCK_GET_REQUEST:{value:'003E', format: function(device,data) {
     return device.getMac();
   }},
-  CLOCK_GET_RESPONSE:{value:'003F', regEx:'(\\w{16})(\\w{2})(\\w{2})(\\w{2})(\\w{2})(\\w{2})(\\w{2})(\\w{2})'},
-            // Mac,
-            // hour = parseInt(data[2], 16);
-            // minutes = parseInt(data[3], 16);
-            // seconds = parseInt(data[4], 16);
-            // weekday = parseInt(data[5], 16);
+  CLOCK_GET_RESPONSE:{value:'003F', regEx:'(\\w{16})(\\w{2})(\\w{2})(\\w{2})(\\w{2})(\\w{2})(\\w{2})(\\w{2})',
+  parser:function(data){
+    // Mac,
+    // hour = parseInt(data[2], 16);
+    // minutes = parseInt(data[3], 16);
+    // seconds = parseInt(data[4], 16);
+    // weekday = parseInt(data[5], 16);
+    Logger.log("InsideParser - REALTIMECLOCK_GET_RESPONSE: " + JSON.stringify(data), LogType.DEBUG);
+    return {};
+  }},
+
   POWER_BUFFER_REQUEST:{value:'0048', format: function(device,data) {
     return device.getMac() + data; //Should convert time in what way???
   }},
-  POWER_BUFFER_RESPONSE:{value:'0049', regEx:'(\\w{16})(\\w{8})(\\w{8})(\\w{8})(\\w{8})(\\w{8})(\\w{8})(\\w{8})(\\w{8})(\\w{8})'},
+  POWER_BUFFER_RESPONSE:{value:'0049', regEx:'(\\w{16})(\\w{8})(\\w{8})(\\w{8})(\\w{8})(\\w{8})(\\w{8})(\\w{8})(\\w{8})(\\w{8})',
+  parser:function(data){
+    Logger.log("InsideParser - POWER_BUFFER_RESPONSE: " + JSON.stringify(data), LogType.DEBUG);
+    return {};
+  }},
   NODE_ADDED_TO_NETWORK:{value:'0061', regEx:'(\\w{16})', //sequence number is always FFFD
   parser:function(data) {
     var regularExpression = new RegExp('^(\\w{16})$');
@@ -814,6 +827,7 @@ class PlugwiseOutgoingMessage {
     this._param = param;
     this._tryCount = 0;
     this._returnStatus = 'NoResponse';
+    this._maxTryCount = 5;
   }
 
   getCallback(){
@@ -841,6 +855,16 @@ class PlugwiseOutgoingMessage {
   getTryCount()
   {
     return this._tryCount;
+  }
+
+  getMaxTryCount()
+  {
+    return this._maxTryCount;
+  }
+
+  setMaxTryCount(value)
+  {
+    this._maxTryCount = value;
   }
 
   output()

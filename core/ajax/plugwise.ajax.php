@@ -34,6 +34,11 @@ try {
   		ajax::success();
   	}
 
+    if (init('action') == 'repairEqLogic') {
+  		plugwise::repairNetwork();
+  		ajax::success();
+  	}
+
     if (init('action') == 'removeEqLogic') {
   		plugwise::removeEqLogic(init('id'));
   		ajax::success();
