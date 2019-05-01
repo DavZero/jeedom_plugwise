@@ -10,7 +10,6 @@ var EventEmitter = require('events');
 var SerialPort = require('serialport');
 
 var PULSE_FACTOR = 2.1324759;
-var TIMEOUT = 3500;
 var POWER_INTERVAL = 30000;
 var INVALID_WATT_THRESHOLD = 10000;
 
@@ -18,7 +17,6 @@ var customRound = function(value,n)
 {
   return Math.round(value*Math.pow(10,n))/Math.pow(10,n);
 }
-
 
 class PlugwiseDevice extends EventEmitter {
   constructor(mac)
@@ -210,7 +208,7 @@ class PlugwiseStick extends PlugwiseDevice {
                       this._acknowledgedQueue.Count--;
                       delete this._acknowledgedQueue[id];
                     }
-                  },TIMEOUT,message.Sequence);
+                  },message.getMsgTimeout(),message.Sequence);
                 }
                 delete this._currentMessage;
                 this.processMessageQueue();
@@ -375,9 +373,10 @@ class PlugwiseStick extends PlugwiseDevice {
       stick._mac=messageData.stickMac;
       stick.updateInformation();
       if (messageData.online){
-        stick._addDevice(messageData.circleplusMac, () => {
+        stick.sendMessage (new PlugwiseOutgoingMessage(stick,PlugwiseMessageConst.DEVICE_INFORMATION_REQUEST,messageData.circleplusMac,(stick,messageData) => {
+          var device = stick._updateDeviceInformation(messageData);
           stick._searchDevices();
-        });
+        },10000,16));
       }
       else {
         //ToDo, Manage pairing of Circle+

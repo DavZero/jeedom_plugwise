@@ -36,6 +36,9 @@ var PlugwiseDeviceType = {
   }
 }
 
+var TIMEOUT = 3500;
+var MAXTRYCOUNT = 5;
+
 var PlugwiseMessageConst = {
   //Pass Full message
   parser:function(data) {
@@ -224,7 +227,7 @@ var PlugwiseMessageConst = {
   }},
   ENABLEJOINING_REQUEST:{value:'0008', format:function(device,data) { // Ou alors c'est un allow new node?
     return data.toString(16).pad(2); //00 or 01 ???
-  }},
+  },timeout: 20000, maxTryCount:16},
   INITIALISE_REQUEST:{value:'000A', format:function(device,data) {
     return '';
   }},
@@ -820,14 +823,19 @@ Date.prototype.addYears = function(years) {
 
 
 class PlugwiseOutgoingMessage {
-  constructor(sourcedevice,type,param,callback){
+  constructor(sourcedevice,type,param,callback,overrideTimeout, overrideMaxTryCount){
     this._callback = callback;
     this._sourceDevice = sourcedevice;
     this._messageType = type;
     this._param = param;
     this._tryCount = 0;
     this._returnStatus = 'NoResponse';
-    this._maxTryCount = 5;
+    if (overrideTimeout) this._timeout = overrideTimeout;
+    else if (type.timeout) this._timeout = type.timeout;
+    else this._timeout = TIMEOUT;
+    if (overrideMaxTryCount) this._maxTryCount = overrideMaxTryCount;
+    else if (type.maxTryCount) this._maxTryCount = type.maxTryCount;
+    else this._maxTryCount = MAXTRYCOUNT;
   }
 
   getCallback(){
@@ -859,7 +867,13 @@ class PlugwiseOutgoingMessage {
 
   getMaxTryCount()
   {
+    
     return this._maxTryCount;
+  }
+
+  getMsgTimeout()
+  {
+    return this._timeout;
   }
 
   setMaxTryCount(value)
