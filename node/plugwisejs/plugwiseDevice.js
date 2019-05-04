@@ -208,7 +208,7 @@ class PlugwiseStick extends PlugwiseDevice {
                       this._acknowledgedQueue.Count--;
                       delete this._acknowledgedQueue[id];
                     }
-                  },message.getMsgTimeout(),message.Sequence);
+                  },this._acknowledgedQueue[message.Sequence].getMsgTimeout(),message.Sequence);
                 }
                 delete this._currentMessage;
                 this.processMessageQueue();
