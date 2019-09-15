@@ -15,22 +15,22 @@ $eqLogics = eqLogic::byType('plugwise');
         <br>
         <span>{{Configuration}}</span>
       </div>
-      <div class="cursor eqLogicAction logoSecondary" id="bt_healthPlugwise">
+      <div class="cursor logoSecondary" id="bt_healthPlugwise">
         <i class="fas fa-medkit"></i>
         <br>
         <span>{{Santé}}</span>
       </div>
-      <div class="cursor eqLogicAction logoSecondary expertModeVisible" id="bt_excludeEqLogic">
+      <div class="cursor logoSecondary expertModeVisible" id="bt_excludeEqLogic">
         <i class="fas fa-sign-in-alt fa-rotate-90"></i>
         <br>
         <span>{{Exclure}}</span>
       </div>
-      <div class="cursor eqLogicAction logoSecondary expertModeVisible" id="bt_syncEqLogic">
+      <div class="cursor logoSecondary expertModeVisible" id="bt_syncEqLogic">
         <i class="fas fa-sync"></i>
         <br>
         <span>{{Synchroniser}}</span>
       </div>
-      <div class="cursor eqLogicAction logoSecondary expertModeVisible" id="bt_repairEqLogic">
+      <div class="cursor logoSecondary expertModeVisible" id="bt_repairEqLogic">
         <i class="fas fa-sitemap"></i>
         <br>
         <span>{{Réparer Réseau}}</span>
