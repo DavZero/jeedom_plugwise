@@ -2,7 +2,7 @@ Description
 ===========
 
 Ce plugin permet la gestion des prises Circle/CirclePlus de Plugwise.
-![plugwise_icon](../images/plugwise_icon.png)
+![plugwiseCircle_icon](../images/plugwiseCircle_icon.png)
 
 Configuration du plugin
 =======================
@@ -13,7 +13,7 @@ cliquer sur relancer. Ensuite il faut définir le port USB utilisé
 pour la clé plugwise et un port pour le démon (si vous ne mettez rien 
 le port utilisé sera 5001)
 
-![plugwise_3](../images/plugwise_3.jpgG)
+![plugwise_3](../images/plugwise_3.jpg)
 
 > **Tip**
 >
@@ -59,14 +59,14 @@ Synchroniser les equipements entre le démon et Jeedom
 Nota : l’inclusion de nouveau equipement dans le reseau plugwise depuis
 Jeedom est en cours d’analyse.
 
-![plugwlise_4](../images/plugwlise_4.jpg)
+![plugwise_4](../images/plugwise_4.jpg)
 
 FAQ
 ===
-.Le plugin nécessite t il des prérequis ?
+_Le plugin nécessite t il des prérequis ?_
 Oui, il utilise un démon en nodejs et donc il faut installer les dependenances
 
 Troubleshoting
 ==============
-.Les boutons inclusion, exclusion et synchoniser n’apparaissent pas
+_Les boutons inclusion, exclusion et synchoniser n’apparaissent pas_
 Il faut être en mode expert pour que le bouton soit visible
