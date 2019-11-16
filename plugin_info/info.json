@@ -9,6 +9,6 @@
   "hasDependency": true,
   "hasOwnDeamon": true,
   "maxDependancyInstallTime": 45,
-  "changelog": "https://davzero.github.io/jeedom-plugwise/#language#/changelog",
-  "documentation": "https://davzero.github.io/jeedom-plugwise/#language#/"
+  "changelog": "https://davzero.github.io/jeedom_plugwise/#language#/changelog",
+  "documentation": "https://davzero.github.io/jeedom_plugwise/#language#/"
 }
