@@ -1,0 +1,5 @@
+[panel,danger]
+.Les boutons inclusion, exclusion et synchoniser n'apparaissent pas
+--
+Il faut être en mode expert pour que le bouton soit visible
+--

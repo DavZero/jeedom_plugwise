@@ -1,0 +1,5 @@
+[panel,danger]
+. Inclusion, exclusion, and sync buttons do not appear
+--
+Il faut être en mode expert pour que le bouton soit visible
+--

@@ -1,0 +1,18 @@
+==== Einrichtung
+
+Il n'y a pas de paramétrage a faire en dehors de ceux du démon (voir le chapitre configuration). Une fois celui ci configuré, il va rechercher les prises de votre
+réseau plugwise et les créer dans Jeedom. Ceci devrait prendre moins d'une minute.
+
+Ensuite vous configurer vos nouveaux equipement comme n'importe quel equipement Jeedom.
+
+Sur la page de gestion des équipements, vous pouvez également :
+
+* Exclure des equipements
+
+* Synchroniser les equipements entre le démon et Jeedom
+
+Nota : l'inclusion de nouveau equipement dans le reseau plugwise depuis Jeedom est en cours d'analyse.
+
+image::../images/plugwise_4.jpg[]
+
+TIP: Si lors du démarrage du démon, certaines prise ne sont pas branché, celles ci ne pourront pas être créer dans Jeedom. Afin de les créer dans Jeedom a posteriori, il faut les brancher et cliquer sur le bouton Synchroniser de la page de gestion des equipements

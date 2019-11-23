@@ -1,0 +1,9 @@
+[panel,primary]
+. Does the plugin require prerequisites?
+--
+Non, mais pour une utilisation plus économique, le plugin a besoin de votre géolocalisation (ou a minima de connaitre l'état de présence/absence).
+--
+.Est il possible d'ajouter des prises depuis Jeedom ?
+--
+Actuellement non, il faut créer son réseau avec l'utilitaire fourni par plugwise. Par contre il est possible de supprimer des prises depuis Jeedom.
+--

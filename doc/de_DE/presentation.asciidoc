@@ -1,0 +1,5 @@
+==== Präsentation
+
+Ce plugin permet la gestion des prises Circle/CirclePlus de Plugwise.
+
+image::../images/plugwiseCircle_icon.png[]

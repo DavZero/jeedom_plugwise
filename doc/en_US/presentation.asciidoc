@@ -1,0 +1,5 @@
+==== Introduction
+
+This plugin is used to manage Plugwise's Circle/CirclePlus plugs.
+
+image::../images/plugwiseCircle_icon.png[]
