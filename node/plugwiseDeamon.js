@@ -1,7 +1,7 @@
 var net = require('net');
 var LogType = require('./logger/logger.js').logType;
 var Logger = require('./logger/logger.js').getInstance();
-var plugwiseAPI = require ('./plugwisejs/plugwiseDevice.js');
+var plugwiseAPI = require('./plugwisejs/plugwiseDevice.js');
 var request = require('request');
 
 Logger.setLogLevel(LogType.DEBUG);
@@ -10,15 +10,15 @@ Logger.setLogLevel(LogType.DEBUG);
 var urlJeedom = '';
 var gwAddress = '';
 var logLevel = 'error';
-var serverPort=5001;
+var serverPort = 5001;
 
 // print process.argv
-process.argv.forEach(function(val, index, array) {
-  switch ( index ) {
-    case 2 : urlJeedom = val; break;
-		case 3 : gwAddress = val; break;
-    case 4 : serverPort = val; break;
-    case 5 :
+process.argv.forEach(function (val, index, array) {
+  switch (index) {
+    case 2: urlJeedom = val; break;
+    case 3: gwAddress = val; break;
+    case 4: serverPort = val; break;
+    case 5:
       logLevel = val;
       if (logLevel == 'debug') Logger.setLogLevel(LogType.DEBUG);
       else if (logLevel == 'info') Logger.setLogLevel(LogType.INFO);
@@ -29,30 +29,27 @@ process.argv.forEach(function(val, index, array) {
 });
 
 Logger.log("Démon version 1.1.24", LogType.INFO);
-Logger.log("urlJeedom = "+urlJeedom, LogType.DEBUG) ;
-Logger.log("gateway = "+gwAddress, LogType.DEBUG) ;
-Logger.log("serverPort = "+serverPort, LogType.DEBUG) ;
-Logger.log("logLevel = "+logLevel, LogType.INFO) ;
+Logger.log("urlJeedom = " + urlJeedom, LogType.DEBUG);
+Logger.log("gateway = " + gwAddress, LogType.DEBUG);
+Logger.log("serverPort = " + serverPort, LogType.DEBUG);
+Logger.log("logLevel = " + logLevel, LogType.INFO);
 
 var busy = false;
 var jeedomSendQueue = [];
 
-var processJeedomSendQueue = function()
-{
+var processJeedomSendQueue = function () {
   //Logger.log('Nombre de messages en attente de traitement : ' + jeedomSendQueue.length, LogType.DEBUG);
   var nextMessage = jeedomSendQueue.shift();
 
   if (!nextMessage) {
-      busy = false;
-      return;
+    busy = false;
+    return;
   }
   Logger.log('Traitement du message : ' + JSON.stringify(nextMessage), LogType.DEBUG);
-  request({url:nextMessage.url, qs:nextMessage.data}, function(err, response, body) {
-    if(err)
-    {
+  request({ url: nextMessage.url, qs: nextMessage.data }, function (err, response, body) {
+    if (err) {
       Logger.log(err, LogType.WARNING);
-      if (nextMessage.tryCount < 5)
-      {
+      if (nextMessage.tryCount < 5) {
         nextMessage.tryCount++;
         jeedomSendQueue.unshift(nextMessage);
       }
@@ -62,9 +59,9 @@ var processJeedomSendQueue = function()
   });
 }
 
-var sendToJeedom = function(data, callback)
-{
-  data.type = 'plugwise';
+var sendToJeedom = function (data, callback) {
+  data.type = 'event';
+  data.plugin = 'plugwise';
   var message = {};
   message.url = urlJeedom;
   message.data = data;
@@ -116,69 +113,75 @@ var testd = new test.testParent("parent");
 Logger.log("Initialisation de la clé plugwise : " + gwAddress, LogType.INFO);
 var plugwiseStick = new plugwiseAPI.PlugwiseStick(gwAddress);
 
-plugwiseStick.on('plugwiseError', function(err) {
-  sendToJeedom({eventType: 'error', description : err});
+plugwiseStick.on('plugwiseError', function (err) {
+  sendToJeedom({ eventType: 'error', description: err });
 });
 
-plugwiseStick.on('stickUpdateInfo', function(device) {
-  sendToJeedom({eventType: 'updateInfo', firmwareVersion : device.getFirmwareVersion(), hardwareVersion : device.getHardwareVersion(),
-  mac: device.getMac(), eqpType: device.getType().name});
+plugwiseStick.on('stickUpdateInfo', function (device) {
+  sendToJeedom({
+    eventType: 'updateInfo', firmwareVersion: device.getFirmwareVersion(), hardwareVersion: device.getHardwareVersion(),
+    mac: device.getMac(), eqpType: device.getType().name
+  });
 });
 
-plugwiseStick.on('circleUpdateInfo', function(device) {
-  sendToJeedom({eventType: 'updateInfo', firmwareVersion : device.getFirmwareVersion(), hardwareVersion : device.getHardwareVersion(),
-   state : device.isOn()?'On':'Off', frequency : device.getFrequency(), mac: device.getMac(), eqpType: device.getType().name});
+plugwiseStick.on('circleUpdateInfo', function (device) {
+  sendToJeedom({
+    eventType: 'updateInfo', firmwareVersion: device.getFirmwareVersion(), hardwareVersion: device.getHardwareVersion(),
+    state: device.isOn() ? 'On' : 'Off', frequency: device.getFrequency(), mac: device.getMac(), eqpType: device.getType().name
+  });
 });
 
-plugwiseStick.on('circleUpdatePowerInfo', function(device) {
-  sendToJeedom({eventType: 'updatePowerInfo', power : device.getInstantPower1s(), power8s : device.getInstantPower8s(), consumptionThisHour: device.getConsumptionThisHour(), mac: device.getMac()});
+plugwiseStick.on('circleUpdatePowerInfo', function (device) {
+  sendToJeedom({ eventType: 'updatePowerInfo', power: device.getInstantPower1s(), power8s: device.getInstantPower8s(), consumptionThisHour: device.getConsumptionThisHour(), mac: device.getMac() });
 });
 
-plugwiseStick.on('circleChangeState', function(device) {
-  sendToJeedom({eventType: 'changeState', state : (device.isOn()?'On':'Off'), mac: device.getMac()});
+plugwiseStick.on('circleChangeState', function (device) {
+  sendToJeedom({ eventType: 'changeState', state: (device.isOn() ? 'On' : 'Off'), mac: device.getMac() });
 });
 
-plugwiseStick.on('circleRemove', function(macAddress) {
-  sendToJeedom({eventType: 'removeEquipment', mac: macAddress});
+plugwiseStick.on('circleRemove', function (macAddress) {
+  sendToJeedom({ eventType: 'removeEquipment', mac: macAddress });
 });
 
-plugwiseStick.on('senseUpdateInfo', function(device) {
-  sendToJeedom({eventType: 'updateInfo', firmwareVersion : device.getFirmwareVersion(), hardwareVersion : device.getHardwareVersion(),
-  mac: device.getMac(), eqpType: device.getType().name});
+plugwiseStick.on('senseUpdateInfo', function (device) {
+  sendToJeedom({
+    eventType: 'updateInfo', firmwareVersion: device.getFirmwareVersion(), hardwareVersion: device.getHardwareVersion(),
+    mac: device.getMac(), eqpType: device.getType().name
+  });
 });
 
-plugwiseStick.on('senseUpdateSenseInfo', function(device) {
-  sendToJeedom({eventType: 'senseValue', humidity: device.getHumidity(), temperature: device.getTemperature(), mac: device.getMac()});
+plugwiseStick.on('senseUpdateSenseInfo', function (device) {
+  sendToJeedom({ eventType: 'senseValue', humidity: device.getHumidity(), temperature: device.getTemperature(), mac: device.getMac() });
 });
 
 //Serveur pour la reception des message depuis jeedom
-Logger.log("Création du serveur sur le port "+serverPort, LogType.DEBUG);
+Logger.log("Création du serveur sur le port " + serverPort, LogType.DEBUG);
 //Create server for manage Jeedom->plugwisejs
-var server = net.createServer(function(c) {
+var server = net.createServer(function (c) {
   Logger.log("Server connected", LogType.DEBUG);
 
-  c.on('error', function(e) {
+  c.on('error', function (e) {
     Logger.log("Error server disconnected, err : " + e, LogType.ERROR);
   });
 
-  c.on('close', function() {
+  c.on('close', function () {
     Logger.log("Server disconnected", LogType.DEBUG);
   });
 
-  c.on('data', function(data) {
+  c.on('data', function (data) {
     Logger.log("Data receive from Jeedom: " + data, LogType.DEBUG);
     sendToPlugwise(data);
   });
 });
 
-server.listen({host: 'localhost',port: serverPort}, function(e) {
+server.listen({ host: 'localhost', port: serverPort }, function (e) {
   Logger.log("Server bound on " + serverPort, LogType.INFO);
 });
 
-var sendToPlugwise = function (payload){
+var sendToPlugwise = function (payload) {
   var data = JSON.parse(payload);
-  if (data.macAddress == 'STICK'){
-    switch (data.command){
+  if (data.macAddress == 'STICK') {
+    switch (data.command) {
       case 'TOGGLEINCLUDESTATE':
         Logger.log("Changement du mode d'inclusion");
         plugwiseStick.toggleIncludeState();
@@ -210,7 +213,7 @@ var sendToPlugwise = function (payload){
     Logger.log("Impossible de trouver le device " + data.macAddress + " sur le reseau plugwise", LogType.ERROR);
     return;
   }
-  switch (data.command){
+  switch (data.command) {
     case 'SWITCHON':
       Logger.log("Ordre PowerOn sur prise " + data.macAddress + " envoyé", LogType.INFO);
       obj.powerOn();
@@ -236,10 +239,10 @@ var sendToPlugwise = function (payload){
   }
 }
 
-process.on('uncaughtException', function ( err ) {
-	console.error('An uncaughtException was found, the program will end : ' + err);
+process.on('uncaughtException', function (err) {
+  console.error('An uncaughtException was found, the program will end : ' + err);
   //console.error('An uncaughtException was found, the program will end : ' + err.stack);
-  Logger.log('An uncaughtException was found, the program will end : ' + err,LogType.ERROR);
+  Logger.log('An uncaughtException was found, the program will end : ' + err, LogType.ERROR);
   //sendToJeedom({eventType: 'error', description : err.message},() => {
   //
   //});
