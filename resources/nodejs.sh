@@ -42,9 +42,10 @@ step 70 "Installation des librairies du démon, veuillez patienter svp"
 silent sudo mkdir node_modules
 silent sudo chown -R www-data:www-data node_modules
 
-
 step 80
 sudo npm install --unsafe-perm serialport
+step 81
+sudo npm install --unsafe-perm @serialport/parser-readline
 step 82
 sudo npm install --unsafe-perm events
 step 84
