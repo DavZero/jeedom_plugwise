@@ -18,6 +18,7 @@ sudo rm -rf node_modules
 sudo rm package.json
 npm cache clean
 sudo npm install --unsafe-perm serialport
+sudo npm install --unsafe-perm @serialport/parser-readline
 sudo npm install --unsafe-perm moment
 sudo npm install --unsafe-perm crc
 sudo chown -R www-data node_modules
