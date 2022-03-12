@@ -8,7 +8,7 @@ var PlugwiseMessageConst = require('./plugwiseMessage.js').PlugwiseMessageConst;
 var PlugwiseDeviceType = require('./plugwiseMessage.js').PlugwiseDeviceType;
 var EventEmitter = require('events');
 var SerialPort = require('serialport');
-const { ReadlineParser } = require('@serialport/parser-readline')
+//const { ReadlineParser } = require('@serialport/parser-readline')
 
 var PULSE_FACTOR = 2.1324759;
 var POWER_INTERVAL = 30000;
@@ -94,8 +94,8 @@ class PlugwiseStick extends PlugwiseDevice {
     this._currentMessage = {};
     this._inclusionMode = false;
 
-    //var parser = new SerialPort.parsers.Readline({delimiter: '\n'});
-    var parser = new ReadlineParser({ delimiter: '\n' });
+    var parser = new SerialPort.parsers.Readline({ delimiter: '\n' });
+    //var parser = new ReadlineParser({ delimiter: '\n' });
     parser.on('data', this.processData.bind(this));
 
     // connect to the serial port of the 'stick'
