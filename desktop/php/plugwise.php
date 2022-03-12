@@ -45,7 +45,7 @@ $eqLogics = eqLogic::byType('plugwise');
         echo '  <div class="eqLogicDisplayCard cursor ' . $opacity . '" data-eqLogic_id="' . $eqLogic->getId() . '">';
         if ($eqLogic->getConfiguration('toRemove') == 1) {
           echo '<img src="plugins/plugwise/doc/images/plugwiseCircleToRemove_icon.png" />';
-        } else echo '<img src="plugins/plugwise/docs/images/plugwise' . $eqLogic->getConfiguration('type') . '_icon.png" />';
+        } else echo '<img src="plugins/plugwise/doc/images/plugwise' . $eqLogic->getConfiguration('type') . '_icon.png" />';
         echo '   <br>';
         echo '   <span class="name">' . $eqLogic->getHumanName(true, true) . '</span>';
         echo ' </div>';
