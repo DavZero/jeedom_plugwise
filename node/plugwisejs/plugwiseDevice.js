@@ -99,7 +99,8 @@ class PlugwiseStick extends PlugwiseDevice {
     parser.on('data', this.processData.bind(this));
 
     // connect to the serial port of the 'stick'
-    this._sp = new SerialPort({ path: port, baudRate: 115200 });
+    //this._sp = new SerialPort({ path: port, baudRate: 115200 });
+    this._sp = new SerialPort(port, { baudRate: 115200 });
 
     this._sp.pipe(parser);
 
