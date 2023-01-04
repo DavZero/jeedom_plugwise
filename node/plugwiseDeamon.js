@@ -55,7 +55,7 @@ var processJeedomSendQueue = function () {
       }
     }
     else Logger.log("Response from Jeedom: " + response.statusCode, LogType.DEBUG);
-    processJeedomSendQueue();
+    setTimeout(processJeedomSendQueue, 0.01*1000);
   });
 }
 
