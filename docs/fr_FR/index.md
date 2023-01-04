@@ -1,7 +1,7 @@
 Description
 ===========
 
-Ce plugin permet la gestion des prises Circle/CirclePlus de Plugwise.
+Ce plugin permet la gestion des prises Circle/CirclePlus de Plugwise. 
 ![plugwiseCircle_icon](../images/plugwiseCircle_icon.png)
 
 Configuration du plugin
